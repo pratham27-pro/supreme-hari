@@ -26,7 +26,7 @@ const SignUp = () => {
 
           {/* Center Heading */}
           <h2 className="absolute left-1/2 transform -translate-x-1/2 text-xl md:text-2xl font-bold text-[#E4002B]">
-            Client Registration Page
+            Employee Registration Page
           </h2>
         </div>
       </nav>
@@ -79,20 +79,6 @@ const SignUp = () => {
                 <input
                   type="tel"
                   placeholder="123-456-7890"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Organization Name */}
-            <div>
-              <label className="block text-sm font-medium mb-1">Organization Name</label>
-              <div className="relative">
-                <FaBuilding className="absolute left-3 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Organization Name"
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
                   required
                 />
