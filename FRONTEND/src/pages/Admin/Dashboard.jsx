@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaPlus,
   FaUpload,
@@ -19,6 +19,8 @@ import EditCampaign from "../Campaign/EditCampaign";
 import UpdateCampaign from "../Campaign/UpdateCampaign";
 import ActivateDeactivateCampaign from "../Campaign/ActivateDeactivateCampaign";
 import CampaignStaus from "../Campaign/CampaignStatus";
+import MapEmployee from "../Campaign/MapEmployee";
+// import CampaignStaus from "../Campaign/CampaignStatus";
 
 // Job
 import PostJob from "./PostJob";
@@ -34,12 +36,17 @@ const Dashboard = () => {
   const [selectedJobId, setSelectedJobId] = useState(null);
   const [selectedCampaignId, setSelectedCampaignId] = useState(null);
 
+  // Scroll to top whenever selectedComponent changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [selectedComponent]);
+
   const toggleMenu = (menuName) => {
     setOpenMenu((prev) => {
       // If clicking same menu → close it
       if (prev === menuName) {
         if (menuName === "campaignManagement") {
-          setSelectedComponent("campaignHome");   // ✅ Show home when closed
+          setSelectedComponent("campaignHome");   // Show home when closed
         }
         return "";
       }
@@ -64,9 +71,8 @@ const Dashboard = () => {
       case "employee":
         return <CreateEmployee />;
 
-      /* =======================
-            JOB MANAGEMENT
-      ======================= */
+      /* JOB MANAGEMENT */
+
       case "postJob":
         return <PostJob />;
 
@@ -106,9 +112,8 @@ const Dashboard = () => {
           />
         );
 
-      /* =======================
-        ✅ CAMPAIGN MANAGEMENT
-      ======================= */
+      /* CAMPAIGN MANAGEMENT */
+
       case "campaignHome":
         return <CampaignHome />;
 
@@ -117,6 +122,9 @@ const Dashboard = () => {
 
       case "assignCampaign":
         return <AssignCampaign />;
+      
+      case "mapEmployee":
+        return <MapEmployee />;
 
       case "editCampaign":
         return (
@@ -154,7 +162,8 @@ const Dashboard = () => {
           />
         );
 
-      /* ======================= */
+      /* BULK UPLOAD */
+
       case "bulkUpload":
         return <BulkUpload />;
 
@@ -175,11 +184,11 @@ const Dashboard = () => {
   return (
     <>
       {/* TOP NAVBAR */}
-      <nav className="fixed top-0 w-full z-50 bg-white shadow-md px-6 md:px-10">
+      <nav className="fixed top-0 w-full z-50 bg-black shadow-md px-6 md:px-10">
         <div className="flex justify-between items-center py-4 max-w-screen-xl mx-auto relative">
-          <img src="cpLogo.jpg" alt="Logo" className="h-14 cursor-pointer" />
+          <img src="supreme.png" alt="Logo" className="h-14 cursor-pointer" />
           <h2 className="absolute left-1/2 transform -translate-x-1/2 text-xl md:text-2xl font-bold text-[#E4002B]">
-            Admin Home Page
+            Concept Promotions and Events
           </h2>
         </div>
       </nav>
@@ -187,7 +196,7 @@ const Dashboard = () => {
       {/* Layout */}
       <div className="flex min-h-screen bg-gray-50 pt-20">
         {/* SIDEBAR */}
-        <div className="w-70 bg-white shadow-md h-[calc(100vh-5rem)] fixed top-20 left-0 p-4 flex flex-col justify-between">
+        <div className="w-70 bg-white shadow-md h-[calc(100vh-5rem)] fixed top-20 left-0 p-4 flex flex-col justify-between overflow-y-auto">
           <ul className="space-y-2">
 
             {/* CREATE MENU */}
@@ -336,6 +345,14 @@ const Dashboard = () => {
                       }`}
                   >
                     Activate / Deactivate Campaign
+                  </li>
+
+                  <li
+                    onClick={() => setSelectedComponent("mapEmployee")}
+                    className={`hover:text-[#E4002B] cursor-pointer ${selectedComponent === "mapEmployee" ? "text-[#E4002B] font-semibold" : ""
+                      }`}
+                  >
+                    Map Employee
                   </li>
                 </ul>
               )}
