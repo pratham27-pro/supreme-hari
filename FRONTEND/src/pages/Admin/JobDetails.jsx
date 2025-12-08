@@ -13,7 +13,7 @@ const JobDetails = ({ jobId, onBack }) => {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `https://supreme-419p.onrender.com/api/admin/career/jobs/${jobId}`,
+        `https://srv1168036.hstgr.cloud/api/admin/career/jobs/${jobId}`,
         {
           method: "GET",
           headers: {
@@ -49,7 +49,7 @@ const JobDetails = ({ jobId, onBack }) => {
       const token = localStorage.getItem("token");
 
       const res = await fetch(
-        `https://supreme-419p.onrender.com/api/admin/jobs/${jobId}`,
+        `https://srv1168036.hstgr.cloud/api/admin/jobs/${jobId}`,
         {
           method: "PUT",
           headers: {
@@ -68,7 +68,7 @@ const JobDetails = ({ jobId, onBack }) => {
         toast.error(data.message || "Update failed", { theme: "dark" });
       } else {
         setJob(data.job);
-        toast.success("Status updated ✅", { theme: "dark" });
+        toast.success("Status updated", { theme: "dark" });
       }
     } catch (err) {
       console.log(err);

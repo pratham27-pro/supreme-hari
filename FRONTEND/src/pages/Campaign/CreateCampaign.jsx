@@ -185,7 +185,7 @@ const CreateCampaign = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch("https://supreme-419p.onrender.com/api/admin/campaigns", {
+      const response = await fetch("https://srv1168036.hstgr.cloud/api/admin/campaigns", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

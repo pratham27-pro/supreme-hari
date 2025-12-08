@@ -250,7 +250,7 @@ const CreateClient = () => {
       }
 
       const response = await fetch(
-        "https://supreme-419p.onrender.com/api/admin/add-client-admin",
+        "https://srv1168036.hstgr.cloud/api/admin/add-client-admin",
         {
           method: "POST",
           headers: {

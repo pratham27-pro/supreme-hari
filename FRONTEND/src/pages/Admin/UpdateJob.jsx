@@ -26,7 +26,7 @@ const UpdateJob = ({ onEditJob }) => {
       }
 
       const response = await fetch(
-        "https://supreme-419p.onrender.com/api/admin/jobs",
+        "https://srv1168036.hstgr.cloud/api/admin/jobs",
         {
           headers: {
             "Content-Type": "application/json",

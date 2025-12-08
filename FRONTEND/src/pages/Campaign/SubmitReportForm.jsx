@@ -80,7 +80,7 @@ const SubmitReportForm = ({ retailers, employees, onSubmit, onCancel, campaignId
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                `https://supreme-419p.onrender.com/api/admin/campaign/${campaignId}/retailer/${retailerId}/employee`,
+                `https://srv1168036.hstgr.cloud/api/admin/campaign/${campaignId}/retailer/${retailerId}/employee`,
                 {
                     method: "GET",
                     headers: { Authorization: `Bearer ${token}` },
@@ -118,7 +118,7 @@ const SubmitReportForm = ({ retailers, employees, onSubmit, onCancel, campaignId
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                `https://supreme-419p.onrender.com/api/admin/campaign/${campaignId}/employee-retailer-mapping`,
+                `https://srv1168036.hstgr.cloud/api/admin/campaign/${campaignId}/employee-retailer-mapping`,
                 {
                     method: "GET",
                     headers: { Authorization: `Bearer ${token}` },
@@ -487,40 +487,77 @@ const SubmitReportForm = ({ retailers, employees, onSubmit, onCancel, campaignId
                 </div>
             )}
 
-            {/* OTHERS */}
+            {/* OTHERS REPORT */}
             {reportType?.value === "others" && (
                 <div>
-                    <label className="block font-medium mb-1">Upload File</label>
-                    {images.length === 0 ? (
-                        <label className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-[#E4002B]">
-                            <FiPlus className="text-3xl text-gray-400" />
-                            <span>Click or drop file here</span>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleImageChange}
-                            />
-                        </label>
-                    ) : (
-                        <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                            {isImage(images[0]) ? (
-                                <img
-                                    src={URL.createObjectURL(images[0])}
-                                    className="w-28 h-28 mx-auto rounded"
-                                    alt="preview"
-                                />
-                            ) : (
-                                <p className="text-sm">{images[0]?.name}</p>
-                            )}
-                            <button
-                                type="button"
-                                className="flex items-center gap-1 text-[#E4002B] mt-2 mx-auto"
-                                onClick={() => setImages([])}
-                            >
-                                <FiX /> Remove
-                            </button>
+                    <label className="block font-medium mb-1">
+                        Upload Files <span className="text-red-500">(Multiple Files Allowed)</span>
+                    </label>
+
+                    {/* Upload Box — Same as Window Display */}
+                    <label className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-gray-500 cursor-pointer hover:border-[#E4002B]">
+                        <FiPlus className="text-3xl text-gray-400" />
+                        <span>Click or drop files here to upload</span>
+                        <input
+                            type="file"
+                            accept="image/*, application/pdf"
+                            multiple
+                            className="hidden"
+                            onChange={handleImageChange}
+                        />
+                    </label>
+
+                    {/* Preview Grid */}
+                    {images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {images.map((file, index) => (
+                                <div
+                                    key={index}
+                                    className="relative border-2 border-dashed rounded-lg overflow-hidden bg-gray-50 group"
+                                >
+                                    {/* Show image OR file name for pdf/doc */}
+                                    {isImage(file) ? (
+                                        <img
+                                            src={URL.createObjectURL(file)}
+                                            className="w-full h-32 object-cover"
+                                            alt={`preview-${index}`}
+                                        />
+                                    ) : (
+                                        <div className="w-full h-32 flex items-center justify-center bg-gray-100">
+                                            <p className="text-sm text-gray-600 px-2 text-center">
+                                                {file?.name.length > 20
+                                                    ? file.name.substring(0, 17) + "..."
+                                                    : file.name}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Remove Icon */}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeImage(index)}
+                                        className="absolute top-1 right-1 bg-[#E4002B] text-white rounded-full p-1 
+                        opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                        <FiX size={16} />
+                                    </button>
+
+                                    {/* Bottom File Name */}
+                                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 text-center">
+                                        {file?.name.length > 15
+                                            ? file.name.substring(0, 12) + "..."
+                                            : file?.name}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
+                    )}
+
+                    {/* Count */}
+                    {images.length > 0 && (
+                        <p className="text-sm text-gray-600 mt-3">
+                            {images.length} file{images.length !== 1 ? "s" : ""} uploaded
+                        </p>
                     )}
                 </div>
             )}

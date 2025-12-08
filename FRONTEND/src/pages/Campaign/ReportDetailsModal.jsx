@@ -42,8 +42,13 @@ const frequencyOptions = [
 ];
 
 const ReportDetailsModal = ({ report, onClose, onUpdate, onDelete }) => {
-    console.log("REPORT OBJECT =>", report);
-    console.log("FREQUENCY VALUE =>", report.frequency);
+
+    useEffect(() => {
+        document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = "auto";
+        };
+    }, []);
 
     const [isEditing, setIsEditing] = useState(false);
 
@@ -275,9 +280,10 @@ const ReportDetailsModal = ({ report, onClose, onUpdate, onDelete }) => {
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+            className="fixed inset-0 bg-black/10 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
             onClick={onClose}
         >
+
             <div
                 className="bg-white rounded-lg shadow-xl max-w-5xl w-full my-8"
                 onClick={(e) => e.stopPropagation()}

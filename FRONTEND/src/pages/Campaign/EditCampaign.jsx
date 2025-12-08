@@ -50,7 +50,7 @@ const EditCampaign = ({ campaignId, onBack }) => {
     states: [],
   });
 
-  const API_BASE = "https://supreme-419p.onrender.com";
+  const API_BASE = "https://srv1168036.hstgr.cloud";
 
   const getAllStates = () => {
     const allStates = Object.values(regionStates).flat();

@@ -11,7 +11,7 @@ const CampaignHome = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "https://supreme-419p.onrender.com/api/admin/campaigns",
+        "https://srv1168036.hstgr.cloud/api/admin/campaigns",
         {
           method: "GET",
           headers: {

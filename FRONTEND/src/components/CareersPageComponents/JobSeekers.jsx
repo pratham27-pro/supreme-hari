@@ -26,13 +26,13 @@ const JobSeekers = () => {
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState("Upload your CV");
   const [fileSelected, setFileSelected] = useState(false);
-  const [loading, setLoading] = useState(false); // ✅ Loading state
+  const [loading, setLoading] = useState(false); //  Loading state
   const [showTerms, setShowTerms] = useState(false);
   const dropdownRef = useRef(null);
 
-  // ✅ Fetch job roles
+  // Fetch job roles
   useEffect(() => {
-    fetch("https://supreme-419p.onrender.com/api/career/jobs")
+    fetch("https://srv1168036.hstgr.cloud/api/career/jobs")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setJobs(data);
@@ -41,7 +41,7 @@ const JobSeekers = () => {
       .catch((err) => console.error("Error fetching jobs:", err));
   }, []);
 
-  // ✅ Close dropdown on outside click
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -52,7 +52,7 @@ const JobSeekers = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ File change
+  // File change
   const handleFileChange = (e) => {
     const selected = e.target.files[0];
     if (selected) {
@@ -69,7 +69,7 @@ const JobSeekers = () => {
     document.getElementById("cv-upload").value = "";
   };
 
-  // ✅ Submit
+  // Submit
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -82,7 +82,7 @@ const JobSeekers = () => {
       return;
     }
 
-    setLoading(true); // ✅ Start loading
+    setLoading(true); // Start loading
 
     const formData = new FormData();
     formData.append("fullName", fullName);
@@ -93,7 +93,7 @@ const JobSeekers = () => {
     formData.append("resume", file);
 
     try {
-      const response = await fetch("https://supreme-419p.onrender.com/api/career/apply", {
+      const response = await fetch("https://srv1168036.hstgr.cloud/api/career/apply", {
         method: "POST",
         body: formData,
       });
@@ -109,7 +109,7 @@ const JobSeekers = () => {
         return;
       }
 
-      toast.success("Application submitted successfully! ✅", {
+      toast.success("Application submitted successfully!", {
         position: "top-right",
         autoClose: 3000,
         theme: "dark",
@@ -291,7 +291,9 @@ const JobSeekers = () => {
                   </>
                 ) : (
                   <div className="flex items-center justify-between text-xs px-2 text-gray-200">
-                    <span className="truncate">{fileName}</span>
+                    <span className="overflow-x-auto whitespace-nowrap block max-w-[120px] sm:max-w-none scrollbar-thin scrollbar-thumb-rounded">
+                      {fileName}
+                    </span>
                     <button
                       type="button"
                       onClick={handleRemoveFile}

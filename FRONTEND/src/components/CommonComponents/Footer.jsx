@@ -43,7 +43,7 @@ const Footer = () => {
             <div className="flex justify-center md:justify-start items-start space-x-3">
               <FaMapMarkerAlt className="text-red-600 mt-1" />
               <p>
-                Communication Address: 32-33, WC-5, <br />
+                Communication Address: 40-41, WC-5, <br />
                 Bakshi House, Nehru Place, <br />
                 New Delhi - 110019
               </p>
@@ -81,7 +81,7 @@ const Footer = () => {
                 </a>
               ))}
             </div>
-            <h3 className="font-semibold text-white text-base">
+            {/* <h3 className="font-semibold text-white text-base">
               Also Available On
             </h3>
             <div className="flex justify-center md:justify-start items-center gap-2 mt-2">
@@ -95,7 +95,7 @@ const Footer = () => {
                 alt="App Store"
                 className="h-15 w-auto cursor-pointer hover:opacity-80 transition"
               />
-            </div>
+            </div> */}
           </div>
         </div>
       </footer>

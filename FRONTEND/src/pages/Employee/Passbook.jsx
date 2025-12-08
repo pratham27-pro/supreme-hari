@@ -132,7 +132,7 @@ const Passbook = () => {
 
                     <tbody>
                         {rows.map((item, i) => (
-                            <tr key={i} className="odd:bg-gray-100">
+                            <tr key={i} className="odd:bg-gray-200 even:bg-white">
                                 <td className="border border-black px-3 py-2">{item.date}</td>
                                 <td className="border border-black px-3 py-2">{item.particulars}</td>
 

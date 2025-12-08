@@ -71,7 +71,7 @@ const ManageReports = () => {
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                "https://supreme-419p.onrender.com/api/admin/campaigns",
+                "https://srv1168036.hstgr.cloud/api/admin/campaigns",
                 {
                     method: "GET",
                     headers: { Authorization: `Bearer ${token}` },
@@ -111,7 +111,7 @@ const ManageReports = () => {
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                `https://supreme-419p.onrender.com/api/admin/campaign/${campaignId}/employee-retailer-mapping`,
+                `https://srv1168036.hstgr.cloud/api/admin/campaign/${campaignId}/employee-retailer-mapping`,
                 {
                     method: "GET",
                     headers: { Authorization: `Bearer ${token}` },
@@ -223,7 +223,7 @@ const ManageReports = () => {
             }
 
             const res = await fetch(
-                `https://supreme-419p.onrender.com/api/admin/reports/campaign-retailers?${params.toString()}`,
+                `https://srv1168036.hstgr.cloud/api/admin/reports/campaign-retailers?${params.toString()}`,
                 {
                     method: "GET",
                     headers: { Authorization: `Bearer ${token}` },
@@ -284,7 +284,7 @@ const ManageReports = () => {
             formData.append("campaignId", selectedCampaign.value);
 
             const res = await fetch(
-                "https://supreme-419p.onrender.com/api/admin/admin/reports",
+                "https://srv1168036.hstgr.cloud/api/admin/admin/reports",
                 {
                     method: "POST",
                     headers: {
@@ -371,7 +371,7 @@ const ManageReports = () => {
             const token = localStorage.getItem("token");
 
             const res = await fetch(
-                `https://supreme-419p.onrender.com/api/admin/reports/${reportId}`,
+                `https://srv1168036.hstgr.cloud/api/admin/reports/${reportId}`,
                 {
                     method: "PUT",
                     headers: {
@@ -409,7 +409,7 @@ const ManageReports = () => {
             const token = localStorage.getItem("token");
 
             const res = await fetch(
-                `https://supreme-419p.onrender.com/api/admin/reports/${reportId}`,
+                `https://srv1168036.hstgr.cloud/api/admin/reports/${reportId}`,
                 {
                     method: "DELETE",
                     headers: {

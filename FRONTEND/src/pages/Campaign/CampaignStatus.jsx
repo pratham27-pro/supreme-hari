@@ -21,7 +21,7 @@ const CampaignStatus = ({ onViewCampaign }) => {
   const fetchCampaigns = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("https://supreme-419p.onrender.com/api/admin/campaigns", {
+      const res = await fetch("https://srv1168036.hstgr.cloud/api/admin/campaigns", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

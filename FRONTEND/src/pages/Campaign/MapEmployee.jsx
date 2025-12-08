@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import * as XLSX from 'xlsx-js-style'; 
+import * as XLSX from 'xlsx-js-style';
 
 const customSelectStyles = {
     control: (provided, state) => ({
@@ -67,7 +67,7 @@ const MapEmployee = () => {
         try {
             const token = localStorage.getItem("token");
             const res = await fetch(
-                "https://supreme-419p.onrender.com/api/admin/campaigns",
+                "https://srv1168036.hstgr.cloud/api/admin/campaigns",
                 {
                     method: "GET",
                     headers: { Authorization: `Bearer ${token}` },
@@ -111,7 +111,7 @@ const MapEmployee = () => {
             retailers.map(async (retailer) => {
                 try {
                     const res = await fetch(
-                        `https://supreme-419p.onrender.com/api/admin/campaign/${campaignId}/retailer/${retailer._id}/employee`,
+                        `https://srv1168036.hstgr.cloud/api/admin/campaign/${campaignId}/retailer/${retailer._id}/employee`,
                         {
                             headers: { Authorization: `Bearer ${token}` },
                         }
@@ -150,7 +150,7 @@ const MapEmployee = () => {
         const token = localStorage.getItem("token");
 
         const res = await fetch(
-            `https://supreme-419p.onrender.com/api/admin/campaign/${campaignId}/employee-retailer-mapping`,
+            `https://srv1168036.hstgr.cloud/api/admin/campaign/${campaignId}/employee-retailer-mapping`,
             { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -238,7 +238,8 @@ const MapEmployee = () => {
         // 🆕 Pair-specific state filter
         if (pairStateFilter) {
             filtered = filtered.filter(
-                (p) => p.retailer.shopDetails?.shopAddress?.state === pairStateFilter.value
+                (p) =>
+                    p.retailer?.shopDetails?.shopAddress?.state === pairStateFilter.value
             );
         }
 
@@ -291,7 +292,7 @@ const MapEmployee = () => {
 
             // 1️⃣ Fetch retailers + employees
             const res = await fetch(
-                `https://supreme-419p.onrender.com/api/admin/campaign/${selected.value}/retailers-with-employees`,
+                `https://srv1168036.hstgr.cloud/api/admin/campaign/${selected.value}/retailers-with-employees`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -353,7 +354,8 @@ const MapEmployee = () => {
                                 _id: ret._id,
                                 uniqueId: ret.uniqueId,
                                 shopName: ret.shopDetails?.shopName,
-                                state: ret.shopDetails?.shopAddress?.state,   // ✅ ADD THIS
+                                state: ret.shopDetails?.shopAddress?.state,
+                                shopDetails: ret.shopDetails
                             },
                             assignedAt: ret.assignedAt
                         });
@@ -390,7 +392,7 @@ const MapEmployee = () => {
         for (const retailerId of selectedRetailers) {
             try {
                 const res = await fetch(
-                    "https://supreme-419p.onrender.com/api/admin/campaign/assign-employee-to-retailer",
+                    "https://srv1168036.hstgr.cloud/api/admin/campaign/assign-employee-to-retailer",
                     {
                         method: "POST",
                         headers: {
@@ -790,7 +792,7 @@ const MapEmployee = () => {
                                     onClick={handleAssignEmployee}
                                     disabled={!selectedEmployee || selectedRetailers.length === 0}
                                     className={`px-6 py-3 rounded-lg font-semibold text-white transition
-            ${!selectedEmployee || selectedRetailers.length === 0
+                ${!selectedEmployee || selectedRetailers.length === 0
                                             ? "bg-gray-400 cursor-not-allowed"
                                             : "bg-red-600 hover:bg-red-700"
                                         }`}

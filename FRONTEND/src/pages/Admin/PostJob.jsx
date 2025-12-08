@@ -64,7 +64,7 @@ const PostJob = () => {
 
     try {
       setLoading(true);
-      const response = await fetch("https://supreme-419p.onrender.com/api/admin/jobs", {
+      const response = await fetch("https://srv1168036.hstgr.cloud/api/admin/jobs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,7 +76,7 @@ const PostJob = () => {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success("Job posted successfully! ✅", {
+        toast.success("Job posted successfully!", {
           position: "top-right",
           autoClose: 3000,
           theme: "dark",

@@ -41,13 +41,13 @@ const SearchableSelect = ({ icon: Icon, label, placeholder, options, value, onCh
                 {label} {required && <span className="text-red-500">*</span>}
             </label>
             <div
-                className="w-full border border-gray-300 rounded-lg bg-white"
+                className="w-full border border-gray-300 rounded-lg bg-white cursor-pointer"
                 onClick={() => setOpen(true)}
             >
-                <div className="flex items-center px-3 py-2">
-                    {Icon && <Icon className="text-gray-400 mr-2" />}
+                <div className="flex items-center px-3 py-2 min-h-[40px]">
+                    {Icon && <Icon className="text-gray-400 mr-2 flex-shrink-0" />}
                     <input
-                        className="flex-1 outline-none bg-transparent text-sm"
+                        className="flex-1 outline-none bg-transparent text-sm min-w-0"
                         placeholder={value || placeholder}
                         value={open ? search : value || ""}
                         onChange={(e) => {
@@ -64,7 +64,7 @@ const SearchableSelect = ({ icon: Icon, label, placeholder, options, value, onCh
                                 onChange("");
                                 setSearch("");
                             }}
-                            className="ml-2 text-gray-500 hover:text-gray-700"
+                            className="ml-2 text-gray-500 hover:text-gray-700 flex-shrink-0"
                         >
                             <IoClose />
                         </button>
@@ -73,7 +73,7 @@ const SearchableSelect = ({ icon: Icon, label, placeholder, options, value, onCh
             </div>
 
             {open && (
-                <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg max-h-48 overflow-y-auto mt-1">
+                <ul className="absolute z-1 w-full bg-white border border-gray-300 rounded-lg max-h-48 overflow-y-auto mt-1 shadow-lg">
                     {filtered.length > 0 ? (
                         filtered.map((opt, idx) => (
                             <li
@@ -251,7 +251,7 @@ const CreateRetailer = () => {
         // Create payload matching backend schema
         const payload = {
             name,
-            email: `${contactNo}@retailer.temp`, // Generate temporary email
+            email: `${contactNo}@retailer.temp`,
             contactNo,
             gender: "",
             govtIdType: "",
@@ -278,7 +278,7 @@ const CreateRetailer = () => {
 
         try {
             const response = await fetch(
-                "https://supreme-419p.onrender.com/api/admin/retailers",
+                "https://srv1168036.hstgr.cloud/api/admin/retailers",
                 {
                     method: "POST",
                     headers: {
@@ -331,7 +331,7 @@ const CreateRetailer = () => {
         <>
             <ToastContainer />
             
-            <div className="flex justify-center items-center w-full">
+            <div className="flex justify-center items-center w-full min-h-screen bg-[#171717] py-8">
                 <div className="w-full max-w-2xl bg-[#EDEDED] shadow-md rounded-xl p-8">
                     <h1 className="text-2xl font-bold text-[#E4002B] text-center mb-6">
                         Retailer Registration
@@ -429,7 +429,21 @@ const CreateRetailer = () => {
                                     placeholder="Select state"
                                     options={states}
                                     value={state}
-                                    onChange={setState}
+                                    onChange={(value) => {
+                                        setState(value);
+                                        // Re-validate pincode when state changes
+                                        if (pincode.length === 6 && value) {
+                                            const stateInfo = pincodeStateMap.find(
+                                                (s) => s.state.toLowerCase() === value.toLowerCase()
+                                            );
+                                            if (stateInfo) {
+                                                const pinNum = parseInt(pincode, 10);
+                                                if (pinNum < stateInfo.start || pinNum > stateInfo.end)
+                                                    setPincodeError(`Pincode not valid for ${value}`);
+                                                else setPincodeError("");
+                                            }
+                                        }
+                                    }}
                                     required
                                 />
 
