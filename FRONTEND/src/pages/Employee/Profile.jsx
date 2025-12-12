@@ -225,7 +225,6 @@ const Profile = () => {
   const [p_pf, setPPf] = useState("")
   const [p_esiDispensary, setPEsiDispensary] = useState("")
   const [p_bankAccount, setPBankAccount] = useState("")
-  const [p_confirmBankAccount, setPConfirmBankAccount] = useState("")
   const [p_ifsc, setPIfsc] = useState("")
   const [p_branchName, setPBranchName] = useState("")
   const [p_bankName, setPBankName] = useState("")
@@ -268,7 +267,6 @@ const Profile = () => {
   const [c_pan, setCPan] = useState("")
   const [c_contractLength, setCContractLength] = useState("")
   const [c_bankAccount, setCBankAccount] = useState("")
-  const [c_confirmBankAccount, setCConfirmBankAccount] = useState("")
   const [c_ifsc, setCIfsc] = useState("")
   const [c_branchName, setCBranchName] = useState("")
   const [c_bankName, setCBankName] = useState("")
@@ -358,8 +356,21 @@ const Profile = () => {
           if (data.child2Name) setPChild2Name(data.child2Name)
           if (data.child2Dob) setPChild2Dob(data.child2Dob)
 
-          if (data.experiences && Array.isArray(data.experiences)) {
-            setExperiences(data.experiences)
+          if (data.experiences && Array.isArray(data.experiences) && data.experiences.length > 0) {
+            setExperiences(
+              data.experiences.map(exp => ({
+                organization: exp.organization || "",
+                designation: exp.designation || "",
+                from: exp.from || "",
+                to: exp.to || "",
+                currentlyWorking: exp.currentlyWorking ?? false
+              }))
+            )
+          } else {
+            // show one empty box by default
+            setExperiences([
+              { organization: "", designation: "", from: "", to: "", currentlyWorking: false }
+            ])
           }
         }
 
@@ -467,10 +478,6 @@ const Profile = () => {
         alert("PAN must be 10 characters")
         return
       }
-      if (!p_bankAccount || p_bankAccount !== p_confirmBankAccount) {
-        alert("Bank account numbers don't match")
-        return
-      }
       if (!p_ifsc || p_ifsc.length !== 11) {
         alert("IFSC must be 11 characters")
         return
@@ -489,10 +496,6 @@ const Profile = () => {
         alert("Aadhaar must be 12 digits")
         return
       }
-      if (!c_bankAccount || c_bankAccount !== c_confirmBankAccount) {
-        alert("Bank account numbers don't match")
-        return
-      }
       if (!c_ifsc || c_ifsc.length !== 11) {
         alert("IFSC must be 11 characters")
         return
@@ -507,7 +510,7 @@ const Profile = () => {
     setMessage("")
 
     try {
-      const token = localStorage.getItem("authToken")
+      const token = localStorage.getItem("token")
       if (!token) {
         alert("Please login again")
         return
@@ -560,7 +563,6 @@ const Profile = () => {
 
         // Bank
         formData.append("bankDetails.bankName", p_bankName)
-        formData.append("bankDetails.accountNumber", p_bankAccount)
         formData.append("bankDetails.ifsc", p_ifsc)
         formData.append("bankDetails.branchName", p_branchName)
 
@@ -1110,6 +1112,19 @@ const Profile = () => {
                   />
 
                   <IconInput
+                    icon={FaUniversity}
+                    label={
+                      <>
+                        Branch Name <span className="text-red-500">*</span>
+                      </>
+                    }
+                    placeholder="Branch name"
+                    value={p_branchName}
+                    onChange={(e) => setPBranchName(e.target.value)}
+                    required
+                  />
+
+                  <IconInput
                     icon={FaSortNumericDownAlt}
                     label={
                       <>
@@ -1119,19 +1134,6 @@ const Profile = () => {
                     placeholder="123456789012"
                     value={p_bankAccount}
                     onChange={(e) => setPBankAccount(e.target.value.replace(/\D/g, ""))}
-                    required
-                  />
-
-                  <IconInput
-                    icon={FaSortNumericDownAlt}
-                    label={
-                      <>
-                        Confirm Account Number <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="123456789012"
-                    value={p_confirmBankAccount}
-                    onChange={(e) => setPConfirmBankAccount(e.target.value.replace(/\D/g, ""))}
                     required
                   />
 
@@ -1149,18 +1151,6 @@ const Profile = () => {
                     required
                   />
 
-                  <IconInput
-                    icon={FaUniversity}
-                    label={
-                      <>
-                        Branch Name <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="Branch name"
-                    value={p_branchName}
-                    onChange={(e) => setPBranchName(e.target.value)}
-                    required
-                  />
                 </div>
               </section>
 
@@ -1222,34 +1212,40 @@ const Profile = () => {
                         required
                       />
 
-                      {!exp.currentlyWorking && (
-                        <IconInput
-                          icon={FaCalendarAlt}
-                          label={
-                            <>
-                              To <span className="text-red-500">*</span>
-                            </>
-                          }
-                          type="date"
-                          placeholder=""
-                          value={exp.to}
-                          onChange={(e) => updateExperience(idx, "to", e.target.value)}
-                          required
-                        />
-                      )}
+                      <IconInput
+                        icon={FaCalendarAlt}
+                        label={
+                          <>
+                            To <span className="text-red-500">*</span>
+                          </>
+                        }
+                        type="date"
+                        placeholder=""
+                        value={exp.to}
+                        onChange={(e) => updateExperience(idx, "to", e.target.value)}
+                        disabled={exp.currentlyWorking}
+                        required
+                      />
                     </div>
 
                     <div className="flex items-center gap-2 mt-3">
                       <input
                         type="checkbox"
                         id={`currentlyWorking-${idx}`}
-                        checked={!!exp.currentlyWorking}
+                        checked={exp.currentlyWorking || false}
                         onChange={(e) => {
-                          const checked = e.target.checked
-                          updateExperience(idx, "currentlyWorking", checked)
-                          if (checked) {
-                            updateExperience(idx, "to", "")
-                          }
+                          const checked = e.target.checked;
+                          setExperiences(prev =>
+                            prev.map((exp, i) =>
+                              i === idx
+                                ? {
+                                  ...exp,
+                                  currentlyWorking: checked,
+                                  to: checked ? "" : exp.to,
+                                }
+                                : exp
+                            )
+                          );
                         }}
                         className="w-4 h-4 accent-[#E4002B] cursor-pointer"
                       />
@@ -1492,19 +1488,6 @@ const Profile = () => {
                     placeholder="123456789012"
                     value={c_bankAccount}
                     onChange={(e) => setCBankAccount(e.target.value.replace(/\D/g, ""))}
-                    required
-                  />
-
-                  <IconInput
-                    icon={FaSortNumericDownAlt}
-                    label={
-                      <>
-                        Confirm Account Number <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="123456789012"
-                    value={c_confirmBankAccount}
-                    onChange={(e) => setCConfirmBankAccount(e.target.value.replace(/\D/g, ""))}
                     required
                   />
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaPlus, FaUpload, FaBriefcase } from "react-icons/fa";
+import { FaPlus, FaUpload, FaBriefcase, FaWallet, FaBullseye } from "react-icons/fa";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -29,11 +29,16 @@ import JobDetails from "./JobDetails";
 import BulkUpload from "./BulkUpload";
 import ManageReports from "../Campaign/ManageReports";
 
+// Passbook Pages
+import PassbookHome from "./PassbookHome";
+import SetBudget from "./SetBudget";
+
 const Dashboard = () => {
     const [openMenu, setOpenMenu] = useState("");
     const [selectedComponent, setSelectedComponent] = useState("welcome");
     const [selectedJobId, setSelectedJobId] = useState(null);
     const [selectedCampaignId, setSelectedCampaignId] = useState(null);
+    const [selectedPaymentId, setSelectedPaymentId] = useState(null);
 
     // Scroll to top whenever selectedComponent changes
     useEffect(() => {
@@ -47,12 +52,20 @@ const Dashboard = () => {
                 if (menuName === "campaignManagement") {
                     setSelectedComponent("campaignHome"); // Show home when closed
                 }
+                if (menuName === "passbook") {
+                    setSelectedComponent("passbookHome"); // Show home when closed
+                }
                 return "";
             }
 
             // When opening Campaign menu → default home
             if (menuName === "campaignManagement") {
                 setSelectedComponent("campaignHome");
+            }
+
+            // When opening Passbook menu → default home
+            if (menuName === "passbook") {
+                setSelectedComponent("passbookHome");
             }
 
             return menuName;
@@ -188,6 +201,13 @@ const Dashboard = () => {
                         }
                     />
                 );
+
+            /* PASSBOOK */
+            case "passbookHome":
+                return <PassbookHome />;
+
+            case "setbudget":
+                return <SetBudget />;
 
             /* BULK UPLOAD */
 
@@ -365,7 +385,7 @@ const Dashboard = () => {
                                 className="flex items-center justify-between w-full text-white font-medium px-3 py-2 rounded-lg hover:bg-gray-800 transition"
                             >
                                 <span className="flex items-center gap-2">
-                                    <FaBriefcase className="text-[#E4002B]" />
+                                    <FaBullseye className="text-[#E4002B]" />
                                     Campaign Management
                                 </span>
 
@@ -473,6 +493,41 @@ const Dashboard = () => {
                                             }`}
                                     >
                                         Manage Reports
+                                    </li>
+                                </ul>
+                            )}
+                        </li>
+
+                        {/* PASSBOOK */}
+                        <li>
+                            <button
+                                onClick={() => toggleMenu("passbook")}
+                                className="flex items-center justify-between w-full text-white font-medium px-3 py-2 rounded-lg hover:bg-gray-800 transition"
+                            >
+                                <span className="flex items-center gap-2">
+                                    <FaWallet className="text-[#E4002B]" />
+                                    Passbook
+                                </span>
+
+                                {openMenu === "passbook" ? (
+                                    <IoIosArrowUp className="text-white" />
+                                ) : (
+                                    <IoIosArrowDown className="text-white" />
+                                )}
+                            </button>
+
+                            {openMenu === "passbook" && (
+                                <ul className="mt-2 ml-6 space-y-2 text-gray-500">
+                                    <li
+                                        onClick={() =>
+                                            setSelectedComponent("setbudget")
+                                        }
+                                        className={`hover:text-[#E4002B] cursor-pointer ${selectedComponent === "setbudget"
+                                            ? "text-[#E4002B] font-semibold"
+                                            : ""
+                                            }`}
+                                    >
+                                        Set Budget
                                     </li>
                                 </ul>
                             )}
