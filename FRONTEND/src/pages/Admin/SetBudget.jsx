@@ -126,7 +126,7 @@ const SetBudget = () => {
         }
     }, [selectedRetailer, selectedCampaign]);
 
-    const checkExistingBudget = async () => {
+    const checkExistingBudget = async (silent = false) => {
         try {
             const token = localStorage.getItem("token");
             const response = await fetch(
@@ -140,10 +140,12 @@ const SetBudget = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                if (data.success && data.budget) {
-                    const existingCampaign = data.budget.campaigns.find(
+
+                // Check if data, data.success, and data.budget exist
+                if (data?.success && data?.budget) {
+                    const existingCampaign = data.budget.campaigns?.find(
                         (c) =>
-                            c.campaignId._id.toString() ===
+                            c.campaignId?._id?.toString() ===
                             selectedCampaign.value.toString()
                     );
 
@@ -153,21 +155,46 @@ const SetBudget = () => {
                         setIsEditMode(true);
                         setBudgetId(data.budget._id);
                         setCampaignSubId(existingCampaign._id);
-                        toast.info("Budget already exists. You can update or delete it.", {
-                            theme: "dark",
-                        });
+                        // Only show toast if not silent
+                        if (!silent) {
+                            toast.info("Budget already exists. You can update or delete it.", {
+                                theme: "dark",
+                            });
+                        }
                     } else {
                         resetBudgetState();
+                        if (!silent) {
+                            toast.info("No existing budget found. You can create a new one.", {
+                                theme: "dark",
+                            });
+                        }
                     }
                 } else {
+                    // Handle case where budget is null or undefined
                     resetBudgetState();
+                    if (!silent) {
+                        toast.info("No existing budget found. You can create a new one.", {
+                            theme: "dark",
+                        });
+                    }
                 }
             } else {
+                // Handle non-OK response
                 resetBudgetState();
+                if (!silent) {
+                    toast.info("No existing budget found. You can create a new one.", {
+                        theme: "dark",
+                    });
+                }
             }
         } catch (error) {
             console.error("Error checking existing budget:", error);
             resetBudgetState();
+            if (!silent) {
+                toast.error("Failed to check existing budget. Please try again.", {
+                    theme: "dark",
+                });
+            }
         }
     };
 
@@ -314,6 +341,21 @@ const SetBudget = () => {
 
     const handleRetailerChange = (selected) => {
         setSelectedRetailer(selected);
+
+        // ✅ Auto-select state when retailer is selected
+        if (selected && selected.data) {
+            const retailerState = selected.data.shopDetails?.shopAddress?.state;
+            if (retailerState) {
+                // Find and set the state option
+                const stateOption = stateOptions.find(s => s.value === retailerState);
+                if (stateOption) {
+                    setSelectedState(stateOption);
+                }
+            }
+        } else {
+            // ✅ Clear state when retailer is cleared
+            setSelectedState(null);
+        }
     };
 
     const handleClearAllFilters = () => {
@@ -369,8 +411,8 @@ const SetBudget = () => {
 
             if (response.ok && data.success) {
                 toast.success("Budget set successfully!", { theme: "dark" });
-                // Refresh to check if budget now exists
-                await checkExistingBudget();
+                // ✅ Pass true to prevent the extra toast notification
+                await checkExistingBudget(true);
             } else {
                 toast.error(data.message || "Failed to set budget", {
                     theme: "dark",
@@ -414,7 +456,8 @@ const SetBudget = () => {
 
             if (response.ok && data.success) {
                 toast.success("Budget updated successfully!", { theme: "dark" });
-                await checkExistingBudget();
+                // ✅ Pass true to prevent the extra toast notification
+                await checkExistingBudget(true);
             } else {
                 toast.error(data.message || "Failed to update budget", {
                     theme: "dark",
