@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Select from "react-select";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const customSelectStyles = {
   control: (provided, state) => ({
@@ -38,215 +39,509 @@ const customSelectStyles = {
   }),
 };
 
-const Passbook = () => {
+const ClientPassbook = () => {
   const token = localStorage.getItem("client_token");
 
-  const [campaigns, setCampaigns] = useState([]);
-  const [payments, setPayments] = useState([]);
+  // All Data from APIs
+  const [allCampaigns, setAllCampaigns] = useState([]);
+  const [allRetailers, setAllRetailers] = useState([]);
+  const [allStates, setAllStates] = useState([]);
 
+  // Selected Filters (Multi-select)
+  const [selectedStates, setSelectedStates] = useState([]);
   const [selectedCampaigns, setSelectedCampaigns] = useState([]);
-  const [selectedOutlet, setSelectedOutlet] = useState(null);
+  const [selectedRetailers, setSelectedRetailers] = useState([]);
 
-  const [loading, setLoading] = useState(false);
+  // Filtered Options for Dropdowns
+  const [stateOptions, setStateOptions] = useState([]);
+  const [campaignOptions, setCampaignOptions] = useState([]);
+  const [retailerOptions, setRetailerOptions] = useState([]);
 
-  // ===========================
-  // 1️⃣ FETCH CAMPAIGNS FOR CLIENT
-  // ===========================
-  const fetchCampaigns = async () => {
+  const [loading, setLoading] = useState(true);
+
+  // Passbook display data
+  const [displayData, setDisplayData] = useState([]);
+
+  // ===============================
+  // FETCH ALL DATA ON MOUNT
+  // ===============================
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(
+      // 1️⃣ Fetch Client Campaigns (only campaigns for this client)
+      const campaignsRes = await fetch(
         "https://srv1168036.hstgr.cloud/api/client/client/campaigns",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      const campaignsData = await campaignsRes.json();
+      const campaigns = (campaignsData.campaigns || []).filter(
+        (c) => c.isActive === true
+      );
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast.error(data.message || "Failed to load campaigns");
-        return;
-      }
-
-      const formatted = data.campaigns.map((c) => ({
-        value: c._id,
-        label: c.name,
-      }));
-
-      setCampaigns(formatted);
-    } catch (err) {
-      toast.error("Server error loading campaigns");
-    }
-  };
-
-  // ===========================
-  // 2️⃣ FETCH PAYMENTS FOR CLIENT
-  // ===========================
-  const fetchPayments = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        "https://srv1168036.hstgr.cloud/api/client/client/payments",
+      // 2️⃣ Fetch Retailers
+      const retailersRes = await fetch(
+        "https://srv1168036.hstgr.cloud/api/admin/retailers",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      const retailersData = await retailersRes.json();
+      const retailers = retailersData.retailers || [];
 
-      const data = await res.json();
-      setLoading(false);
+      setAllCampaigns(campaigns);
+      setAllRetailers(retailers);
 
-      if (!res.ok) {
-        toast.error(data.message);
-        return;
-      }
+      // Extract all unique states from retailers
+      const uniqueStates = [
+        ...new Set(
+          retailers
+            .map((r) => r.shopDetails?.shopAddress?.state)
+            .filter(Boolean)
+        ),
+      ];
+      setAllStates(uniqueStates);
 
-      setPayments(data.payments || []);
+      // Initialize dropdown options
+      setStateOptions(uniqueStates.map((s) => ({ label: s, value: s })));
+      setCampaignOptions(
+        campaigns.map((c) => ({ label: c.name, value: c._id, data: c }))
+      );
+      setRetailerOptions(
+        retailers.map((r) => ({
+          label: `${r.uniqueId} - ${r.shopDetails?.shopName || "N/A"}`,
+          value: r.uniqueId,
+          data: r,
+        }))
+      );
     } catch (err) {
+      console.error("Error fetching data:", err);
+      toast.error("Failed to load data", { theme: "dark" });
+    } finally {
       setLoading(false);
-      toast.error("Failed to fetch payments");
     }
   };
 
-  // ===========================
-  // LOAD DATA ON PAGE OPEN
-  // ===========================
+  // ===============================
+  // FETCH PASSBOOK DATA WHEN FILTERS CHANGE
+  // ===============================
   useEffect(() => {
-    fetchCampaigns();
-    fetchPayments();
-  }, []);
+    if (selectedStates.length > 0) {
+      fetchPassbookData();
+    } else {
+      setDisplayData([]);
+    }
+  }, [selectedStates, selectedCampaigns, selectedRetailers]);
 
-  // ===========================
-  // EXTRACT OUTLETS (SHOP NAMES)
-  // ===========================
-  const outletOptions = [
-    ...new Set(
-      payments.map((p) => p.retailerShopName || p.retailerName)
-    ),
-  ].map((name) => ({ label: name, value: name }));
+  const fetchPassbookData = async () => {
+    try {
+      const stateValues = selectedStates.map((s) => s.value);
 
-  // ===========================
-  // FILTER BASED ON OUTLET + CAMPAIGN
-  // ===========================
-  const filteredPayments = payments.filter((p) => {
-    const shopName = p.retailerShopName || p.retailerName;
+      // Get retailers from selected states
+      let retailersToFetch = allRetailers.filter((r) =>
+        stateValues.includes(r.shopDetails?.shopAddress?.state)
+      );
 
-    if (selectedOutlet && shopName !== selectedOutlet.value) return false;
+      // If specific retailers selected, filter to only those
+      if (selectedRetailers.length > 0) {
+        const retailerCodes = selectedRetailers.map((r) => r.value);
+        retailersToFetch = retailersToFetch.filter((r) =>
+          retailerCodes.includes(r.uniqueId)
+        );
+      }
 
+      const allPassbookData = [];
+
+      // Fetch passbook data for each retailer
+      for (const retailer of retailersToFetch) {
+        const response = await fetch(
+          `https://deployed-site-o2d3.onrender.com/api/budgets/passbook?retailerId=${retailer._id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.length > 0) {
+            allPassbookData.push(...data.data);
+          }
+        }
+      }
+
+      // ✅ Get client's campaign IDs from the campaigns dropdown
+      const clientCampaignIds = allCampaigns.map((c) => c._id);
+
+      // Filter and flatten the data
+      const campaignIds = selectedCampaigns.map((c) => c.value);
+
+      const flattenedData = [];
+
+      allPassbookData.forEach((budgetRecord) => {
+        // Check if retailer's state matches
+        if (!stateValues.includes(budgetRecord.state)) return;
+
+        // Filter campaigns
+        budgetRecord.campaigns.forEach((campaign) => {
+          const campaignIdStr = campaign.campaignId._id || campaign.campaignId;
+
+          // ✅ ONLY show campaigns that belong to this client
+          if (!clientCampaignIds.includes(campaignIdStr)) return;
+
+          // If specific campaigns are selected, filter to those
+          if (
+            selectedCampaigns.length === 0 ||
+            campaignIds.includes(campaignIdStr)
+          ) {
+            flattenedData.push({
+              outletCode: budgetRecord.outletCode,
+              shopName: budgetRecord.shopName,
+              state: budgetRecord.state,
+              campaignName: campaign.campaignName,
+              campaignId: campaignIdStr,
+              tca: campaign.tca,
+              cPaid: campaign.cPaid,
+              cPending: campaign.cPending,
+            });
+          }
+        });
+      });
+
+      setDisplayData(flattenedData);
+    } catch (error) {
+      console.error("Error fetching passbook:", error);
+      toast.error("Failed to fetch passbook data", { theme: "dark" });
+    }
+  };
+
+  // ===============================
+  // FILTER LOGIC (Same as Admin)
+  // ===============================
+  useEffect(() => {
     if (
-      selectedCampaigns.length > 0 &&
-      !selectedCampaigns.some((x) => x.value === p.campaignId)
+      selectedStates.length === 0 &&
+      selectedCampaigns.length === 0 &&
+      selectedRetailers.length === 0
     ) {
-      return false;
+      setStateOptions(allStates.map((s) => ({ label: s, value: s })));
+      setCampaignOptions(
+        allCampaigns.map((c) => ({ label: c.name, value: c._id, data: c }))
+      );
+      setRetailerOptions(
+        allRetailers.map((r) => ({
+          label: `${r.uniqueId} - ${r.shopDetails?.shopName || "N/A"}`,
+          value: r.uniqueId,
+          data: r,
+        }))
+      );
+      return;
     }
 
-    return true;
-  });
+    applyFilters();
+  }, [selectedStates, selectedCampaigns, selectedRetailers]);
+
+  const applyFilters = () => {
+    let filteredRetailers = [...allRetailers];
+    let filteredCampaigns = [...allCampaigns];
+    let filteredStates = [...allStates];
+
+    if (selectedStates.length > 0) {
+      const stateValues = selectedStates.map((s) => s.value);
+
+      filteredRetailers = filteredRetailers.filter((r) =>
+        stateValues.includes(r.shopDetails?.shopAddress?.state)
+      );
+
+      filteredCampaigns = filteredCampaigns.filter((c) => {
+        if (Array.isArray(c.states)) {
+          return c.states.some((state) => stateValues.includes(state));
+        }
+        return stateValues.includes(c.state);
+      });
+    }
+
+    if (selectedCampaigns.length > 0) {
+      const campaignIds = selectedCampaigns.map((c) => c.value);
+      const campaignData = allCampaigns.filter((c) =>
+        campaignIds.includes(c._id)
+      );
+
+      if (campaignData.length > 0) {
+        const campaignStates = new Set();
+        campaignData.forEach((c) => {
+          const states = Array.isArray(c.states)
+            ? c.states
+            : c.state
+            ? [c.state]
+            : [];
+          states.forEach((s) => campaignStates.add(s));
+        });
+
+        if (selectedStates.length === 0) {
+          filteredStates = filteredStates.filter((s) =>
+            campaignStates.has(s)
+          );
+        }
+
+        filteredRetailers = filteredRetailers.filter((r) => {
+          const inCampaignState = campaignStates.has(
+            r.shopDetails?.shopAddress?.state
+          );
+          const assignedToCampaign =
+            Array.isArray(r.assignedCampaigns) &&
+            r.assignedCampaigns.some((ac) =>
+              campaignIds.includes(typeof ac === "string" ? ac : ac._id)
+            );
+          return inCampaignState && assignedToCampaign;
+        });
+      }
+    }
+
+    if (selectedRetailers.length > 0) {
+      const retailerCodes = selectedRetailers.map((r) => r.value);
+      const retailerData = allRetailers.filter((r) =>
+        retailerCodes.includes(r.uniqueId)
+      );
+
+      if (retailerData.length > 0) {
+        const retailerStates = new Set(
+          retailerData
+            .map((r) => r.shopDetails?.shopAddress?.state)
+            .filter(Boolean)
+        );
+
+        if (selectedStates.length === 0 && retailerStates.size > 0) {
+          filteredStates = filteredStates.filter((s) =>
+            retailerStates.has(s)
+          );
+        }
+
+        if (selectedCampaigns.length === 0) {
+          const retailerCampaignIds = new Set();
+          retailerData.forEach((r) => {
+            (r.assignedCampaigns || []).forEach((ac) =>
+              retailerCampaignIds.add(typeof ac === "string" ? ac : ac._id)
+            );
+          });
+
+          filteredCampaigns = filteredCampaigns.filter((c) =>
+            retailerCampaignIds.has(c._id)
+          );
+        }
+      }
+    }
+
+    setStateOptions(filteredStates.map((s) => ({ label: s, value: s })));
+    setCampaignOptions(
+      filteredCampaigns.map((c) => ({
+        label: c.name,
+        value: c._id,
+        data: c,
+      }))
+    );
+    setRetailerOptions(
+      filteredRetailers.map((r) => ({
+        label: `${r.uniqueId} - ${r.shopDetails?.shopName || "N/A"}`,
+        value: r.uniqueId,
+        data: r,
+      }))
+    );
+  };
+
+  // ===============================
+  // HANDLE FILTER CHANGES
+  // ===============================
+  const handleStateChange = (selected) => {
+    setSelectedStates(selected || []);
+  };
+
+  const handleCampaignChange = (selected) => {
+    setSelectedCampaigns(selected || []);
+  };
+
+  const handleRetailerChange = (selected) => {
+    setSelectedRetailers(selected || []);
+  };
+
+  const handleClearAllFilters = () => {
+    setSelectedStates([]);
+    setSelectedCampaigns([]);
+    setSelectedRetailers([]);
+    setDisplayData([]);
+  };
 
   return (
-    <div className="p-6">
-      <h2 className="text-3xl font-bold mb-6 text-[#E4002B]">Passbook</h2>
+    <>
+      <ToastContainer position="top-right" autoClose={3000} />
+      <div className="min-h-screen bg-[#171717] p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-[#E4002B] mb-8">
+            Client Passbook
+          </h1>
 
-      {/* FILTERS */}
-      <div className="bg-[#EDEDED] p-6 rounded-lg shadow-md mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Campaign Dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-700">
-              Campaign
-            </label>
-            <Select
-              styles={customSelectStyles}
-              options={campaigns}
-              value={selectedCampaigns}
-              onChange={setSelectedCampaigns}
-              placeholder="Select or search campaigns"
-              isSearchable
-              isMulti
-            />
-          </div>
+          {loading ? (
+            <div className="bg-[#EDEDED] rounded-lg shadow-md p-6">
+              <p className="text-gray-600">Loading data...</p>
+            </div>
+          ) : (
+            <>
+              {/* Filters */}
+              <div className="bg-[#EDEDED] rounded-lg shadow-md p-6 mb-6">
+                <h2 className="text-lg font-semibold mb-4 text-gray-700">
+                  Filter Options
+                </h2>
 
-          {/* Outlet Dropdown */}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-gray-700">
-              Outlet
-            </label>
-            <Select
-              styles={customSelectStyles}
-              options={outletOptions}
-              value={selectedOutlet}
-              onChange={setSelectedOutlet}
-              placeholder="Select or search outlet"
-              isSearchable
-              isClearable
-            />
-          </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* State Filter (Required) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      State *
+                    </label>
+                    <Select
+                      isMulti
+                      value={selectedStates}
+                      onChange={handleStateChange}
+                      options={stateOptions}
+                      styles={customSelectStyles}
+                      placeholder="Select States"
+                      isSearchable
+                    />
+                  </div>
+
+                  {/* Campaign Filter (Optional) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Campaign (Optional)
+                    </label>
+                    <Select
+                      isMulti
+                      value={selectedCampaigns}
+                      onChange={handleCampaignChange}
+                      options={campaignOptions}
+                      styles={customSelectStyles}
+                      placeholder="All Campaigns"
+                      isSearchable
+                    />
+                  </div>
+
+                  {/* Retailer Filter (Optional) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Retailer (Optional)
+                    </label>
+                    <Select
+                      isMulti
+                      value={selectedRetailers}
+                      onChange={handleRetailerChange}
+                      options={retailerOptions}
+                      styles={customSelectStyles}
+                      placeholder="All Retailers"
+                      isSearchable
+                    />
+                  </div>
+                </div>
+
+                {(selectedStates.length > 0 ||
+                  selectedCampaigns.length > 0 ||
+                  selectedRetailers.length > 0) && (
+                  <button
+                    onClick={handleClearAllFilters}
+                    className="mt-4 text-sm text-red-600 underline hover:text-red-800"
+                  >
+                    Clear All Filters
+                  </button>
+                )}
+              </div>
+
+              {/* Passbook Table */}
+              {selectedStates.length > 0 ? (
+                <div className="bg-[#EDEDED] rounded-lg shadow-md p-6">
+                  <h2 className="text-lg font-semibold mb-4 text-gray-700">
+                    Passbook Records ({displayData.length})
+                  </h2>
+
+                  {displayData.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-100">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                              S.No
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                              State
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                              Outlet Name
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                              Campaign Name
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                              Total Amount (TCA)
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                              Paid
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-600 uppercase">
+                              Pending
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {displayData.map((record, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-2 text-sm">{index + 1}</td>
+                              <td className="px-4 py-2 text-sm text-gray-600">
+                                {record.state}
+                              </td>
+                              <td className="px-4 py-2 text-sm font-medium text-gray-700">
+                                {record.shopName}
+                              </td>
+                              <td className="px-4 py-2 text-sm text-gray-600">
+                                {record.campaignName}
+                              </td>
+                              <td className="px-4 py-2 text-sm font-semibold text-blue-600">
+                                ₹{record.tca}
+                              </td>
+                              <td className="px-4 py-2 text-sm font-semibold text-green-600">
+                                ₹{record.cPaid}
+                              </td>
+                              <td className="px-4 py-2 text-sm font-semibold text-yellow-600">
+                                ₹{record.cPending}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 py-4 text-center">
+                      No records found for the selected filters.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">
+                  <p className="font-semibold">Selection Required</p>
+                  <p>
+                    Please select at least one state to view passbook data.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-
-      {/* TABLE */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border border-black rounded-lg overflow-hidden">
-          <thead>
-            <tr className="bg-[#E4002B] text-white">
-              <th className="border border-black px-3 py-2">Outlet (Shop Name)</th>
-              <th className="border border-black px-3 py-2">Campaign</th>
-              <th className="border border-black px-3 py-2">Payment Status</th>
-              <th className="border border-black px-3 py-2">Total Amount</th>
-              <th className="border border-black px-3 py-2">Paid</th>
-              <th className="border border-black px-3 py-2">Remaining</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="text-center py-4">
-                  Loading...
-                </td>
-              </tr>
-            ) : filteredPayments.length > 0 ? (
-              filteredPayments.map((p, i) => (
-                <tr key={i} className="odd:bg-gray-100 even:bg-white">
-                  <td className="border border-black px-3 py-2">
-                    {p.retailerShopName || p.retailerName}
-                  </td>
-                  <td className="border border-black px-3 py-2">
-                    {p.campaignName}
-                  </td>
-                  <td className="border border-black px-3 py-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      p.paymentStatus === "Completed"
-                        ? "bg-green-100 text-green-800"
-                        : p.paymentStatus === "Partially Paid"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
-                    }`}>
-                      {p.paymentStatus}
-                    </span>
-                  </td>
-                  <td className="border border-black px-3 py-2">
-                    ₹{p.totalAmount}
-                  </td>
-                  <td className="border border-black px-3 py-2 text-green-600">
-                    ₹{p.amountPaid}
-                  </td>
-                  <td className="border border-black px-3 py-2 text-red-600">
-                    ₹{p.remainingAmount}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="text-center text-gray-500 py-4">
-                  No records found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    </>
   );
 };
 
-export default Passbook;
+export default ClientPassbook;

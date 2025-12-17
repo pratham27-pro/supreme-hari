@@ -32,6 +32,7 @@ import ManageReports from "../Campaign/ManageReports";
 // Passbook Pages
 import PassbookHome from "./PassbookHome";
 import SetBudget from "./SetBudget";
+import ManageInstallments from "./ManageInstallments";
 
 const Dashboard = () => {
     const [openMenu, setOpenMenu] = useState("");
@@ -208,6 +209,9 @@ const Dashboard = () => {
 
             case "setbudget":
                 return <SetBudget />;
+
+            case "manageinstallments":
+                return <ManageInstallments />;
 
             /* BULK UPLOAD */
 
@@ -528,6 +532,17 @@ const Dashboard = () => {
                                             }`}
                                     >
                                         Set Budget
+                                    </li>
+                                    <li
+                                        onClick={() =>
+                                            setSelectedComponent("manageinstallments")
+                                        }
+                                        className={`hover:text-[#E4002B] cursor-pointer ${selectedComponent === "manageinstallments"
+                                            ? "text-[#E4002B] font-semibold"
+                                            : ""
+                                            }`}
+                                    >
+                                        Manage Installments
                                     </li>
                                 </ul>
                             )}
