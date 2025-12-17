@@ -122,7 +122,7 @@ const ClientDashboard = () => {
                 return <Passbook {...sharedProps} />;
             case "notifications":
                 return <Notifications {...sharedProps} />;
-            case "detailer":
+            case "detailed":
                 return <DetailedReport {...sharedProps} />;
             case "contact":
                 return <ContactUs />;
@@ -199,11 +199,11 @@ const ClientDashboard = () => {
                         </li>
 
                         <li
-                            onClick={() => setSelectedComponent("detailer")}
+                            onClick={() => setSelectedComponent("detailed")}
                             className={`cursor-pointer flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 
-                            ${selectedComponent === "detailer" ? activeClass : ""}`}
+                            ${selectedComponent === "detailed" ? activeClass : ""}`}
                         >
-                            <FaFileAlt /> Detailer Report
+                            <FaFileAlt /> Detailed Report
                         </li>
 
                         <li
