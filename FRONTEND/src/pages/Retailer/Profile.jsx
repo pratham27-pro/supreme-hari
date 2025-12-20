@@ -21,6 +21,8 @@ import {
 } from "react-icons/fa";
 import { IoClose, IoChevronDown } from "react-icons/io5";
 
+const API_BASE = "https://deployed-site-o2d3.onrender.com/api";
+
 const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIcon }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -46,7 +48,6 @@ const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIc
         className="relative w-full border border-gray-300 rounded-lg cursor-pointer"
         onClick={() => setOpen(true)}
       >
-        {/* Left icon */}
         {leftIcon && (
           <span className="absolute left-3 top-[11px] text-gray-400">
             {leftIcon}
@@ -67,7 +68,6 @@ const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIc
             onFocus={() => setOpen(true)}
           />
 
-          {/* Clear button */}
           {value && (
             <button
               type="button"
@@ -82,7 +82,6 @@ const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIc
             </button>
           )}
 
-          {/* Down arrow */}
           <IoChevronDown className="ml-2 text-gray-400" />
         </div>
       </div>
@@ -180,10 +179,15 @@ const FileInput = ({ label, accept = "*", file, setFile }) => {
   );
 };
 
+const formatDateForInput = (dateString) => {
+  if (!dateString) return "";
+  return new Date(dateString).toISOString().split("T")[0];
+};
+
 const Profile = () => {
   // Personal details
-  const [name, setName] = useState("Hari Sehgal");
-  const [contactNo, setContactNo] = useState("9310233356");
+  const [name, setName] = useState("");
+  const [contactNo, setContactNo] = useState("");
   const [altContactNo, setAltContactNo] = useState("");
   const [email, setEmail] = useState("");
   const [dob, setDob] = useState("");
@@ -194,7 +198,7 @@ const Profile = () => {
   const [govtIdNumber, setGovtIdNumber] = useState("");
 
   // Shop details
-  const [shopName, setShopName] = useState("Hari Garments");
+  const [shopName, setShopName] = useState("");
   const businessTypeOptions = [
     "Grocery Retailer",
     "Wholesale",
@@ -208,17 +212,17 @@ const Profile = () => {
     "Sole Proprietorship",
     "Partnership",
     "Private Ltd",
-    "LLP"
+    "LLP",
   ];
-  const [businessType, setBusinessType] = useState("Wholesale");
+  const [businessType, setBusinessType] = useState("");
   const [ownershipType, setOwnershipType] = useState("");
   const [gstNo, setGstNo] = useState("");
-  const [panCard, setPanCard] = useState("ABCDE1234F");
-  const [address1, setAddress1] = useState("Guru Ram Das Nagar, Laxmi Nagar");
+  const [panCard, setPanCard] = useState("");
+  const [address1, setAddress1] = useState("");
   const [address2, setAddress2] = useState("");
-  const [city, setCity] = useState("New Delhi");
-  const [state, setState] = useState("Delhi");
-  const [pincode, setPincode] = useState("110092");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [pincode, setPincode] = useState("");
 
   const [gstError, setGstError] = useState("");
 
@@ -233,10 +237,10 @@ const Profile = () => {
     "Other",
   ];
 
-  const [bankName, setBankName] = useState("HDFC Bank");
-  const [accountNumber, setAccountNumber] = useState("99909310233356");
-  const [ifsc, setIfsc] = useState("HDFC0001234");
-  const [branchName, setBranchName] = useState("Laxmi Nagar");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [ifsc, setIfsc] = useState("");
+  const [branchName, setBranchName] = useState("");
 
   // Files
   const [govtIdPhoto, setGovtIdPhoto] = useState(null);
@@ -244,9 +248,9 @@ const Profile = () => {
   const [registrationFormFile, setRegistrationFormFile] = useState(null);
   const [outletPhoto, setOutletPhoto] = useState(null);
 
-  // Submission
+  // UX
   const [submitting, setSubmitting] = useState(false);
-
+  const [loading, setLoading] = useState(true);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState("");
   const [isVerified, setIsVerified] = useState(false);
@@ -254,99 +258,193 @@ const Profile = () => {
   const [pennyChecked, setPennyChecked] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setSubmitting(true);
+  // LOAD PROFILE FROM BACKEND
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("retailer_token"); // adjust key
+        if (!token) {
+          setLoading(false);
+          setError("No token found. Please log in.");
+          return;
+        }
 
-    // Collect all form values
-    const payload = {
-      name,
-      contactNo,
-      altContactNo,
-      email,
-      dob,
-      gender,
-      govtIdType,
-      govtIdNumber,
+        const res = await fetch(`${API_BASE}/retailer/retailer/me`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      address1,
-      address2,
-      city,
-      state,
-      pincode,
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(msg || "Failed to load profile");
+        }
 
-      shopDetails: {
-        shopName,
-        businessType,
-        ownershipType,
-        GSTNo: gstNo,
-        PANCard: panCard,
-      },
+        const data = await res.json();
 
-      bankDetails: {
-        bankName,
-        accountNumber,
-        IFSC: ifsc,
-        branchName,
-      },
+        // Map backend -> frontend state
+        setName(data.name || "");
+        setContactNo(data.contactNo || "");
+        setEmail(data.email || "");
+        setDob(formatDateForInput(data.dob) || "");
+        setGender(data.gender || "");
+        setGovtIdType(data.govtIdType || "");
+        setGovtIdNumber(data.govtIdNumber || "");
 
-      files: {
-        govtIdPhoto,
-        personPhoto,
-        registrationFormFile,
-        outletPhoto,
-      },
+        setShopName(data.shopDetails?.shopName || "");
+        setBusinessType(data.shopDetails?.businessType || "");
+        setOwnershipType(data.shopDetails?.ownershipType || "");
+        setGstNo(data.shopDetails?.GSTNo || "");
+        setPanCard(data.shopDetails?.PANCard || "");
+
+        setAddress1(data.shopDetails?.shopAddress?.address || "");
+        setAddress2(data.shopDetails?.shopAddress?.address2 || "");
+        setCity(data.shopDetails?.shopAddress?.city || "");
+        setState(data.shopDetails?.shopAddress?.state || "");
+        setPincode(data.shopDetails?.shopAddress?.pincode || "");
+
+        setBankName(data.bankDetails?.bankName || "");
+        setAccountNumber(data.bankDetails?.accountNumber || "");
+        setIfsc(data.bankDetails?.IFSC || "");
+        setBranchName(data.bankDetails?.branchName || "");
+
+        setLoading(false);
+      } catch (err) {
+        setError(err.message || "Error loading profile");
+        setLoading(false);
+      }
     };
 
-    // Show data in console
-    console.log("Submitted payload:", payload);
+    fetchProfile();
+  }, []);
 
-    resetForm();
-    setSubmitting(false);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("retailer_token");
+      if (!token) {
+        setError("No token found. Please log in.");
+        setSubmitting(false);
+        return;
+      }
+
+      const formData = new FormData();
+
+      // Basic
+      formData.append("email", email);
+      formData.append("dob", dob || "");
+      formData.append("gender", gender || "");
+      formData.append("contactNo", contactNo || "");
+      formData.append("alternateContactNo", altContactNo || "")
+      formData.append("govtIdType", govtIdType || "");
+      formData.append("govtIdNumber", govtIdNumber || "");
+
+      // Shop details that retailer can adjust
+      formData.append("businessType", businessType || "");
+      formData.append("ownershipType", ownershipType || "");
+      formData.append("GSTNo", gstNo || "");
+      formData.append("PANCard", panCard || "");
+
+      // Shop address (only address2 editable currently)
+      formData.append("shopAddress", address1 || "");
+      formData.append("shopCity", city || "");
+      formData.append("shopState", state || "");
+      formData.append("shopPincode", pincode || "");
+      formData.append("shopAddress2", address2 || ""); 
+
+      // Bank details
+      formData.append("bankName", bankName || "");
+      formData.append("accountNumber", accountNumber || "");
+      formData.append("IFSC", ifsc || "");
+      formData.append("branchName", branchName || "");
+
+      // Files
+      if (govtIdPhoto?.raw) formData.append("govtIdPhoto", govtIdPhoto.raw);
+      if (personPhoto?.raw) formData.append("personPhoto", personPhoto.raw);
+      if (registrationFormFile?.raw)
+        formData.append("registrationFormFile", registrationFormFile.raw);
+      if (outletPhoto?.raw) formData.append("outletPhoto", outletPhoto.raw);
+
+      const res = await fetch(`${API_BASE}/retailer/me`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to update profile");
+      }
+
+      const updated = await res.json();
+      // Optionally re-sync state from response:
+      const r = updated.retailer || updated;
+
+      setEmail(r.email || "");
+      setDob(formatDateForInput(r.dob) || "");
+      setGender(r.gender || "");
+      setGovtIdType(r.govtIdType || "");
+      setGovtIdNumber(r.govtIdNumber || "");
+
+      setBusinessType(r.shopDetails?.businessType || "");
+      setOwnershipType(r.shopDetails?.ownershipType || "");
+      setGstNo(r.shopDetails?.GSTNo || "");
+      setPanCard(r.shopDetails?.PANCard || "");
+
+      setAddress1(r.shopDetails?.shopAddress?.address || "");
+      setAddress2(r.shopDetails?.shopAddress?.address2 || "");
+      setCity(r.shopDetails?.shopAddress?.city || "");
+      setState(r.shopDetails?.shopAddress?.state || "");
+      setPincode(r.shopDetails?.shopAddress?.pincode);
+
+      setBankName(r.bankDetails?.bankName || "");
+      setAccountNumber(r.bankDetails?.accountNumber || "");
+      setIfsc(r.bankDetails?.IFSC || "");
+      setBranchName(r.bankDetails?.branchName || "");
+
+      alert("Profile updated successfully");
+    } catch (err) {
+      setError(err.message || "Error updating profile");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const resetForm = () => {
-    setName("Hari Sehgal");
-    setContactNo("9310233356");
-    setAltContactNo("");
-    setEmail("");
-    setDob("");
-    setGender("");
-    setGovtIdType("");
-    setGovtIdNumber("");
-    setShopName("Hari Garments");
-    setBusinessType("Wholesale");
-    setOwnershipType("");
-    setGstNo("");
-    setPanCard("ABCDE1234F");
-    setAddress1("Guru Ram Das Nagar, Laxmi Nagar");
-    setAddress2("");
-    setCity("New Delhi");
-    setState("Delhi");
-    setPincode("110092");
-    setBankName("HDFC Bank");
-    setAccountNumber("99909310233356");
-    setIfsc("HDFC0001234");
-    setBranchName("Laxmi Nagar");
-
-    setGovtIdPhoto(null);
-    setPersonPhoto(null);
-    setRegistrationFormFile(null);
-    setOutletPhoto(null);
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center w-full h-64">
+        <p className="text-gray-600">Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      {/* Retailer Profile */}
       <div className="flex justify-center items-center w-full">
         <div className="w-full max-w-3xl bg-white shadow-md rounded-xl p-8">
-          <h1 className="text-2xl font-bold text-[#E4002B] text-center pb-8">Retailer Profile</h1>
+          <h1 className="text-2xl font-bold text-[#E4002B] text-center pb-8">
+            Retailer Profile
+          </h1>
+
+          {error && (
+            <p className="mb-4 text-sm text-red-600 text-center">{error}</p>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Personal Details */}
             <section className="space-y-4">
-              <h3 className="text-lg font-medium text-[#E4002B]">Personal Details</h3>
+              <h3 className="text-lg font-medium text-[#E4002B]">
+                Personal Details
+              </h3>
 
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -376,24 +474,25 @@ const Profile = () => {
                     value={contactNo}
                     onChange={(e) => {
                       setContactNo(e.target.value.replace(/\D/g, ""));
-                      setIsVerified(false); // reset verify if number changes
+                      setIsVerified(false);
                     }}
                     placeholder="+91 1234567890"
                     maxLength={10}
-                    className={`w-full pl-10 pr-20 py-2 border rounded-lg outline-none focus:ring-2
-        ${isVerified ? "border-green-500 focus:ring-green-500" : "border-gray-300 focus:ring-[#E4002B]"}
-      `}
+                    className={`w-full pl-10 pr-20 py-2 border rounded-lg outline-none focus:ring-2 ${isVerified
+                      ? "border-green-500 focus:ring-green-500"
+                      : "border-gray-300 focus:ring-[#E4002B]"
+                      }`}
                     required
                   />
 
-                  {/* Verify Button */}
                   <button
                     type="button"
                     disabled={contactNo.length !== 10}
                     onClick={() => setShowOtpModal(true)}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold
-        ${contactNo.length === 10 ? "text-[#E4002B] hover:underline" : "text-gray-400"}
-      `}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold ${contactNo.length === 10
+                      ? "text-[#E4002B] hover:underline"
+                      : "text-gray-400"
+                      }`}
                   >
                     {isVerified ? "Verified ✓" : "Verify"}
                   </button>
@@ -409,7 +508,9 @@ const Profile = () => {
                   <input
                     type="tel"
                     value={altContactNo}
-                    onChange={(e) => setAltContactNo(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) =>
+                      setAltContactNo(e.target.value.replace(/\D/g, ""))
+                    }
                     placeholder="+91 1234567890"
                     maxLength={10}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
@@ -418,9 +519,7 @@ const Profile = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Email
-                </label>
+                <label className="block text-sm font-medium mb-1">Email</label>
                 <div className="relative">
                   <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
                   <input
@@ -485,7 +584,9 @@ const Profile = () => {
 
             {/* Shop Details */}
             <section className="space-y-4">
-              <h3 className="text-lg font-medium text-[#E4002B]">Shop Details</h3>
+              <h3 className="text-lg font-medium text-[#E4002B]">
+                Shop Details
+              </h3>
 
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -532,22 +633,20 @@ const Profile = () => {
                   </label>
 
                   <div className="relative">
-                    {/* Left Icon */}
                     <FaFileInvoice className="absolute left-3 top-3 text-gray-400" />
-
                     <input
                       type="text"
                       value={gstNo}
                       onChange={(e) => {
                         const val = e.target.value.toUpperCase();
                         setGstNo(val);
-
                         const gstRegex =
                           /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-
                         if (val === "") setGstError("");
                         else if (!gstRegex.test(val))
-                          setGstError("Invalid GST Number format (e.g., 29ABCDE1234F1Z5)");
+                          setGstError(
+                            "Invalid GST Number format (e.g., 29ABCDE1234F1Z5)"
+                          );
                         else setGstError("");
                       }}
                       placeholder="29ABCDE1234F1Z5"
@@ -558,7 +657,9 @@ const Profile = () => {
                     />
                   </div>
 
-                  {gstError && <p className="text-red-500 text-xs mt-1">{gstError}</p>}
+                  {gstError && (
+                    <p className="text-red-500 text-xs mt-1">{gstError}</p>
+                  )}
                 </div>
 
                 <div>
@@ -567,7 +668,6 @@ const Profile = () => {
                   </label>
 
                   <div className="relative">
-                    {/* Left icon */}
                     <FaIdCard className="absolute left-3 top-3 text-gray-400" />
                     <input
                       type="text"
@@ -586,9 +686,7 @@ const Profile = () => {
                 </label>
 
                 <div className="relative">
-                  {/* Left icon */}
                   <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
-
                   <input
                     type="text"
                     value={address1}
@@ -605,21 +703,17 @@ const Profile = () => {
                 </label>
 
                 <div className="relative">
-                  {/* Left icon */}
                   <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
-
                   <input
                     type="text"
                     value={address2}
                     onChange={(e) => setAddress2(e.target.value)}
                     placeholder="Near XYZ landmark"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 
-                 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
                   />
                 </div>
               </div>
 
-              {/* City, State, and Pincode */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -627,20 +721,16 @@ const Profile = () => {
                   </label>
 
                   <div className="relative">
-                    {/* Left icon */}
                     <FaCity className="absolute left-3 top-3 text-gray-400" />
-
                     <input
                       type="text"
                       value={city}
                       disabled
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 
-                 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                       required
                     />
                   </div>
                 </div>
-
 
                 <div>
                   <label className="block text-sm font-medium mb-1">
@@ -648,15 +738,12 @@ const Profile = () => {
                   </label>
 
                   <div className="relative">
-                    {/* Left icon */}
                     <FaMapMarkedAlt className="absolute left-3 top-3 text-gray-400" />
-
                     <input
                       type="text"
                       value={state}
                       disabled
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg
-                 bg-gray-100 text-gray-600 cursor-not-allowed"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                       required
                     />
                   </div>
@@ -668,26 +755,24 @@ const Profile = () => {
                   </label>
 
                   <div className="relative">
-                    {/* Left icon */}
                     <FaMapPin className="absolute left-3 top-3 text-gray-400" />
-
                     <input
                       type="text"
                       value={pincode}
                       disabled
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg 
-                 bg-gray-100 text-gray-600 cursor-not-allowed"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
                       required
                     />
                   </div>
                 </div>
-
               </div>
             </section>
 
             {/* Bank Details */}
             <section className="space-y-4">
-              <h3 className="text-lg font-medium text-[#E4002B]">Bank Details</h3>
+              <h3 className="text-lg font-medium text-[#E4002B]">
+                Bank Details
+              </h3>
 
               <SearchableSelect
                 label={
@@ -708,16 +793,16 @@ const Profile = () => {
                 </label>
 
                 <div className="relative">
-                  {/* Left icon */}
                   <FaCreditCard className="absolute left-3 top-3 text-gray-400" />
 
                   <input
                     type="text"
                     value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, ""))}
+                    onChange={(e) =>
+                      setAccountNumber(e.target.value.replace(/\D/g, ""))
+                    }
                     placeholder="123456789012"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 
-                 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
                     required
                   />
                 </div>
@@ -729,7 +814,6 @@ const Profile = () => {
                 </label>
 
                 <div className="relative">
-                  {/* Left icon */}
                   <FaCode className="absolute left-3 top-3 text-gray-400" />
 
                   <input
@@ -743,14 +827,17 @@ const Profile = () => {
 
                       if (val === "") setIfscError("");
                       else if (!ifscRegex.test(val))
-                        setIfscError("Invalid IFSC Code format (e.g., HDFC0001234)");
+                        setIfscError(
+                          "Invalid IFSC Code format (e.g., HDFC0001234)"
+                        );
                       else setIfscError("");
                     }}
                     placeholder="HDFC0001234"
                     maxLength={11}
-                    className={`w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 
-        ${ifscError ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#E4002B]"}
-      `}
+                    className={`w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 ${ifscError
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-[#E4002B]"
+                      }`}
                     required
                   />
                 </div>
@@ -766,7 +853,6 @@ const Profile = () => {
                 </label>
 
                 <div className="relative">
-                  {/* Left icon */}
                   <FaStore className="absolute left-3 top-3 text-gray-400" />
 
                   <input
@@ -774,14 +860,12 @@ const Profile = () => {
                     value={branchName}
                     onChange={(e) => setBranchName(e.target.value)}
                     placeholder="Branch name"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 
-                 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
                     required
                   />
                 </div>
               </div>
 
-              {/* Penny Drop Verification */}
               <div className="mt-2 flex items-start gap-2">
                 <input
                   type="checkbox"
@@ -793,7 +877,8 @@ const Profile = () => {
                 />
 
                 <label className="text-sm text-gray-700 leading-5 cursor-pointer">
-                  I confirm that I have received the ₹1 verification amount in my bank account.
+                  I confirm that I have received the ₹1 verification amount in my
+                  bank account.
                 </label>
               </div>
             </section>
@@ -801,9 +886,12 @@ const Profile = () => {
             {/* File Uploads */}
             <section className="space-y-4">
               <div>
-                <h3 className="text-lg font-medium text-[#E4002B]">File Uploads</h3>
+                <h3 className="text-lg font-medium text-[#E4002B]">
+                  File Uploads
+                </h3>
                 <p className="text-[11px] text-gray-500 mt-1">
-                  <span className="text-red-500">*</span> Accepted formats: PNG, JPG, JPEG, PDF, DOC — less than 1 MB
+                  <span className="text-red-500">*</span> Accepted formats: PNG,
+                  JPG, JPEG, PDF, DOC — less than 1 MB
                 </p>
               </div>
 
@@ -831,11 +919,7 @@ const Profile = () => {
                 />
 
                 <FileInput
-                  label={
-                    <>
-                      Registration Form
-                    </>
-                  }
+                  label={<>Registration Form</>}
                   accept=".png,.jpg,.jpeg,.pdf,.doc"
                   file={registrationFormFile}
                   setFile={setRegistrationFormFile}
@@ -862,7 +946,7 @@ const Profile = () => {
                 onChange={(e) => setTermsAccepted(e.target.checked)}
                 required
                 className="h-4 w-4"
-                style={{ accentColor: "#E4002B" }} // red tick
+                style={{ accentColor: "#E4002B" }}
               />
 
               <label className="text-sm text-gray-700">
@@ -881,18 +965,17 @@ const Profile = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full bg-[#E4002B] text-white py-3 rounded-lg font-medium hover:bg-[#C3002B] transition disabled:opacity-60"
+                className="w-full bg-[#E4002B] text-white py-3 rounded-lg font-medium hover:bg-[#C3002B] transition disabled:opacity-60 cursor-pointer"
               >
-                {submitting ? "Creating..." : "Create Retailer"}
+                {submitting ? "Saving..." : "Save Profile"}
               </button>
             </div>
           </form>
 
-          {/* Otp Modal */}
+          {/* OTP Modal */}
           {showOtpModal && (
             <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
               <div className="bg-white p-6 rounded-xl shadow-xl w-80 text-center">
-
                 <h3 className="text-lg font-semibold mb-3">Enter OTP</h3>
 
                 <input
@@ -914,9 +997,9 @@ const Profile = () => {
                   >
                     Cancel
                   </button>
-
                   <button
                     onClick={() => {
+                      // TODO: call backend verify OTP if you implement it
                       setIsVerified(true);
                       setShowOtpModal(false);
                       setOtp("");
@@ -926,11 +1009,11 @@ const Profile = () => {
                     Verify
                   </button>
                 </div>
-
               </div>
             </div>
           )}
 
+          {/* Terms & Conditions Modal */}
           {/* Modal for Terms and Conditions */}
           {showTerms && (
             <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">

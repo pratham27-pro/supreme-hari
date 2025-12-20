@@ -36,7 +36,7 @@ const EmployeeSignIn = () => {
         setLoading(false);
         return;
       }
-
+ 
       localStorage.setItem("token", data.token);
       localStorage.setItem("employeeData", JSON.stringify(data.employee));
 
