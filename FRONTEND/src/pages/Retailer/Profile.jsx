@@ -23,7 +23,7 @@ import { IoClose, IoChevronDown } from "react-icons/io5";
 
 const API_BASE = "https://deployed-site-o2d3.onrender.com/api";
 
-const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIcon }) => {
+const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIcon, disabled }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
@@ -45,8 +45,9 @@ const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIc
       <label className="block text-sm font-medium mb-1">{label}</label>
 
       <div
-        className="relative w-full border border-gray-300 rounded-lg cursor-pointer"
-        onClick={() => setOpen(true)}
+        className={`relative w-full border border-gray-300 rounded-lg ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"
+          }`}
+        onClick={() => !disabled && setOpen(true)}
       >
         {leftIcon && (
           <span className="absolute left-3 top-[11px] text-gray-400">
@@ -57,18 +58,21 @@ const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIc
         <div className="flex items-center px-3 py-2">
           <input
             className={`flex-1 outline-none bg-transparent ${leftIcon ? "pl-6" : ""
-              }`}
+              } ${disabled ? "cursor-not-allowed" : ""}`}
             placeholder={value || placeholder}
             value={open ? search : value || ""}
             onChange={(e) => {
-              setSearch(e.target.value);
-              onChange && onChange("");
-              setOpen(true);
+              if (!disabled) {
+                setSearch(e.target.value);
+                onChange && onChange("");
+                setOpen(true);
+              }
             }}
-            onFocus={() => setOpen(true)}
+            onFocus={() => !disabled && setOpen(true)}
+            disabled={disabled}
           />
 
-          {value && (
+          {value && !disabled && (
             <button
               type="button"
               onClick={(e) => {
@@ -86,7 +90,7 @@ const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIc
         </div>
       </div>
 
-      {open && (
+      {open && !disabled && (
         <ul className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg max-h-48 overflow-y-auto mt-1">
           {filtered.length > 0 ? (
             filtered.map((opt, idx) => (
@@ -111,8 +115,9 @@ const SearchableSelect = ({ label, placeholder, options, value, onChange, leftIc
   );
 };
 
-const FileInput = ({ label, accept = "*", file, setFile }) => {
+const FileInput = ({ label, accept = "*", file, setFile, existingImageUrl }) => {
   const fileRef = useRef();
+  const [preview, setPreview] = useState(existingImageUrl || null);
 
   useEffect(() => {
     return () => {
@@ -120,15 +125,25 @@ const FileInput = ({ label, accept = "*", file, setFile }) => {
     };
   }, [file]);
 
+  useEffect(() => {
+    if (existingImageUrl) {
+      setPreview(existingImageUrl);
+    }
+  }, [existingImageUrl]);
+
   function handleFileChange(e) {
     const f = e.target.files[0];
     if (!f) {
       setFile(null);
+      setPreview(existingImageUrl);
       return;
     }
-    const preview = f.type.startsWith("image/") ? URL.createObjectURL(f) : null;
-    setFile({ raw: f, preview, name: f.name });
+    const newPreview = f.type.startsWith("image/") ? URL.createObjectURL(f) : null;
+    setFile({ raw: f, preview: newPreview, name: f.name });
+    setPreview(newPreview);
   }
+
+  const hasFile = file || existingImageUrl;
 
   return (
     <div>
@@ -137,27 +152,28 @@ const FileInput = ({ label, accept = "*", file, setFile }) => {
         className="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#E4002B] transition"
         onClick={() => fileRef.current?.click()}
       >
-        {!file ? (
+        {!hasFile ? (
           <>
             <FaPlus className="text-2xl text-gray-400 mb-2" />
             <p className="text-sm text-gray-500">Click or drop file here</p>
           </>
         ) : (
           <div className="flex flex-col items-center gap-2">
-            {file.preview ? (
+            {preview ? (
               <img
-                src={file.preview}
+                src={preview}
                 alt="preview"
                 className="w-20 h-16 object-cover rounded-md border"
               />
             ) : (
-              <p className="text-sm text-gray-700">{file.name}</p>
+              <p className="text-sm text-gray-700">{file?.name || "Existing file"}</p>
             )}
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setFile(null);
+                setPreview(null);
                 if (fileRef.current) fileRef.current.value = "";
               }}
               className="flex items-center gap-1 text-red-500 text-xs hover:underline"
@@ -184,7 +200,7 @@ const formatDateForInput = (dateString) => {
   return new Date(dateString).toISOString().split("T")[0];
 };
 
-const Profile = () => {
+const RetailerProfile = () => {
   // Personal details
   const [name, setName] = useState("");
   const [contactNo, setContactNo] = useState("");
@@ -242,29 +258,43 @@ const Profile = () => {
   const [ifsc, setIfsc] = useState("");
   const [branchName, setBranchName] = useState("");
 
+  // Track original bank details to detect changes
+  const [originalBankDetails, setOriginalBankDetails] = useState({
+    bankName: "",
+    accountNumber: "",
+    ifsc: "",
+    branchName: "",
+  });
+
   // Files
   const [govtIdPhoto, setGovtIdPhoto] = useState(null);
   const [personPhoto, setPersonPhoto] = useState(null);
   const [registrationFormFile, setRegistrationFormFile] = useState(null);
   const [outletPhoto, setOutletPhoto] = useState(null);
 
+  // Existing images from backend
+  const [existingGovtIdPhoto, setExistingGovtIdPhoto] = useState(null);
+  const [existingPersonPhoto, setExistingPersonPhoto] = useState(null);
+  const [existingRegistrationForm, setExistingRegistrationForm] = useState(null);
+  const [existingOutletPhoto, setExistingOutletPhoto] = useState(null);
+
   // UX
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [isVerified, setIsVerified] = useState(false);
   const [ifscError, setIfscError] = useState("");
-  const [pennyChecked, setPennyChecked] = useState(false);
+  const [pennyCheck, setPennyCheck] = useState(false);
+  const [pennyCheckLocked, setPennyCheckLocked] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [tnc, setTnc] = useState(false);
+  const [tncLocked, setTncLocked] = useState(false);
   const [error, setError] = useState("");
+  const isUpdatingFromBackend = useRef(false);
 
   // LOAD PROFILE FROM BACKEND
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("retailer_token"); // adjust key
+        const token = localStorage.getItem("retailer_token");
         if (!token) {
           setLoading(false);
           setError("No token found. Please log in.");
@@ -287,6 +317,7 @@ const Profile = () => {
         // Map backend -> frontend state
         setName(data.name || "");
         setContactNo(data.contactNo || "");
+        setAltContactNo(data.altContactNo || "");
         setEmail(data.email || "");
         setDob(formatDateForInput(data.dob) || "");
         setGender(data.gender || "");
@@ -305,10 +336,78 @@ const Profile = () => {
         setState(data.shopDetails?.shopAddress?.state || "");
         setPincode(data.shopDetails?.shopAddress?.pincode || "");
 
-        setBankName(data.bankDetails?.bankName || "");
-        setAccountNumber(data.bankDetails?.accountNumber || "");
-        setIfsc(data.bankDetails?.IFSC || "");
-        setBranchName(data.bankDetails?.branchName || "");
+        const bankDetails = {
+          bankName: data.bankDetails?.bankName || "",
+          accountNumber: data.bankDetails?.accountNumber || "",
+          ifsc: data.bankDetails?.IFSC || "",
+          branchName: data.bankDetails?.branchName || "",
+        };
+
+        setBankName(bankDetails.bankName);
+        setAccountNumber(bankDetails.accountNumber);
+        setIfsc(bankDetails.ifsc);
+        setBranchName(bankDetails.branchName);
+        setOriginalBankDetails(bankDetails);
+
+        // T&C and Penny Check
+        const tncValue = data.tnc || false;
+        const pennyValue = data.pennyCheck || false;
+
+        setTnc(tncValue);
+        setPennyCheck(pennyValue);
+
+        // Lock if already accepted
+        if (tncValue) setTncLocked(true);
+        if (pennyValue) setPennyCheckLocked(true);
+
+        // Fetch images
+        const imageStatusRes = await fetch(`${API_BASE}/retailer/retailer/image-status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (imageStatusRes.ok) {
+          const imageStatus = await imageStatusRes.json();
+
+          if (imageStatus.hasGovtIdPhoto) {
+            const imgRes = await fetch(`${API_BASE}/retailer/retailer/image/govtIdPhoto`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (imgRes.ok) {
+              const blob = await imgRes.blob();
+              setExistingGovtIdPhoto(URL.createObjectURL(blob));
+            }
+          }
+
+          if (imageStatus.hasPersonPhoto) {
+            const imgRes = await fetch(`${API_BASE}/retailer/retailer/image/personPhoto`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (imgRes.ok) {
+              const blob = await imgRes.blob();
+              setExistingPersonPhoto(URL.createObjectURL(blob));
+            }
+          }
+
+          if (imageStatus.hasRegistrationFormFile) {
+            const imgRes = await fetch(`${API_BASE}/retailer/retailer/image/registrationFormFile`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (imgRes.ok) {
+              const blob = await imgRes.blob();
+              setExistingRegistrationForm(URL.createObjectURL(blob));
+            }
+          }
+
+          if (imageStatus.hasOutletPhoto) {
+            const imgRes = await fetch(`${API_BASE}/retailer/retailer/image/outletPhoto`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (imgRes.ok) {
+              const blob = await imgRes.blob();
+              setExistingOutletPhoto(URL.createObjectURL(blob));
+            }
+          }
+        }
 
         setLoading(false);
       } catch (err) {
@@ -318,7 +417,32 @@ const Profile = () => {
     };
 
     fetchProfile();
+
+    return () => {
+      if (existingGovtIdPhoto?.startsWith('blob:')) URL.revokeObjectURL(existingGovtIdPhoto);
+      if (existingPersonPhoto?.startsWith('blob:')) URL.revokeObjectURL(existingPersonPhoto);
+      if (existingRegistrationForm?.startsWith('blob:')) URL.revokeObjectURL(existingRegistrationForm);
+      if (existingOutletPhoto?.startsWith('blob:')) URL.revokeObjectURL(existingOutletPhoto);
+    };
   }, []);
+
+  // Detect bank detail changes
+  useEffect(() => {
+    // Skip if we're updating from backend
+    if (isUpdatingFromBackend.current) {
+      return;
+    }
+    const bankChanged =
+      bankName !== originalBankDetails.bankName ||
+      accountNumber !== originalBankDetails.accountNumber ||
+      ifsc !== originalBankDetails.ifsc ||
+      branchName !== originalBankDetails.branchName;
+
+    if (bankChanged && pennyCheckLocked) {
+      setPennyCheck(false);
+      setPennyCheckLocked(false);
+    }
+  }, [bankName, accountNumber, ifsc, branchName, originalBankDetails, pennyCheckLocked]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -336,49 +460,50 @@ const Profile = () => {
       const formData = new FormData();
 
       // Basic
+      formData.append("name", name);
       formData.append("email", email);
+      formData.append("contactNo", contactNo);
+      formData.append("altContactNo", altContactNo);
       formData.append("dob", dob || "");
       formData.append("gender", gender || "");
-      formData.append("contactNo", contactNo || "");
-      formData.append("alternateContactNo", altContactNo || "")
       formData.append("govtIdType", govtIdType || "");
       formData.append("govtIdNumber", govtIdNumber || "");
 
-      // Shop details that retailer can adjust
+      // Shop details
+      formData.append("shopName", shopName);
       formData.append("businessType", businessType || "");
       formData.append("ownershipType", ownershipType || "");
       formData.append("GSTNo", gstNo || "");
-      formData.append("PANCard", panCard || "");
+      formData.append("PANCard", panCard);
 
-      // Shop address (only address2 editable currently)
-      formData.append("shopAddress", address1 || "");
-      formData.append("shopCity", city || "");
-      formData.append("shopState", state || "");
-      formData.append("shopPincode", pincode || "");
-      formData.append("shopAddress2", address2 || ""); 
+      // Shop address
+      formData.append("address", address1);
+      formData.append("address2", address2 || "");
+      formData.append("city", city);
+      formData.append("state", state);
+      formData.append("pincode", pincode);
 
       // Bank details
-      formData.append("bankName", bankName || "");
-      formData.append("accountNumber", accountNumber || "");
-      formData.append("IFSC", ifsc || "");
-      formData.append("branchName", branchName || "");
+      formData.append("bankName", bankName);
+      formData.append("accountNumber", accountNumber);
+      formData.append("IFSC", ifsc);
+      formData.append("branchName", branchName);
 
-      // Files
+      // T&C and Penny Check
+      formData.append("tnc", tnc);
+      formData.append("pennyCheck", pennyCheck);
+
+      // Files - only append if changed
       if (govtIdPhoto?.raw) formData.append("govtIdPhoto", govtIdPhoto.raw);
       if (personPhoto?.raw) formData.append("personPhoto", personPhoto.raw);
-      if (registrationFormFile?.raw)
-        formData.append("registrationFormFile", registrationFormFile.raw);
+      if (registrationFormFile?.raw) formData.append("registrationFormFile", registrationFormFile.raw);
       if (outletPhoto?.raw) formData.append("outletPhoto", outletPhoto.raw);
 
       const res = await fetch(`${API_BASE}/retailer/me`, {
         method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
-
-
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -386,38 +511,66 @@ const Profile = () => {
       }
 
       const updated = await res.json();
-      // Optionally re-sync state from response:
       const r = updated.retailer || updated;
 
+      // SET FLAG TO PREVENT BANK CHANGE DETECTION
+      isUpdatingFromBackend.current = true;
+
+      // Update state with response
       setEmail(r.email || "");
       setDob(formatDateForInput(r.dob) || "");
       setGender(r.gender || "");
       setGovtIdType(r.govtIdType || "");
       setGovtIdNumber(r.govtIdNumber || "");
-
       setBusinessType(r.shopDetails?.businessType || "");
       setOwnershipType(r.shopDetails?.ownershipType || "");
       setGstNo(r.shopDetails?.GSTNo || "");
       setPanCard(r.shopDetails?.PANCard || "");
-
       setAddress1(r.shopDetails?.shopAddress?.address || "");
       setAddress2(r.shopDetails?.shopAddress?.address2 || "");
       setCity(r.shopDetails?.shopAddress?.city || "");
       setState(r.shopDetails?.shopAddress?.state || "");
-      setPincode(r.shopDetails?.shopAddress?.pincode);
+      setPincode(r.shopDetails?.shopAddress?.pincode || "");
 
-      setBankName(r.bankDetails?.bankName || "");
-      setAccountNumber(r.bankDetails?.accountNumber || "");
-      setIfsc(r.bankDetails?.IFSC || "");
-      setBranchName(r.bankDetails?.branchName || "");
+      // Update bank details
+      const newBankDetails = {
+        bankName: r.bankDetails?.bankName || "",
+        accountNumber: r.bankDetails?.accountNumber || "",
+        ifsc: r.bankDetails?.IFSC || "",
+        branchName: r.bankDetails?.branchName || "",
+      };
+
+      setBankName(newBankDetails.bankName);
+      setAccountNumber(newBankDetails.accountNumber);
+      setIfsc(newBankDetails.ifsc);
+      setBranchName(newBankDetails.branchName);
+      setOriginalBankDetails(newBankDetails);
+
+      // Update T&C and Penny Check from backend response
+      const tncValue = r.tnc || false;
+      const pennyValue = r.pennyCheck || false;
+      setTnc(tncValue);
+      setPennyCheck(pennyValue);
+
+      // Lock if they're true
+      if (tncValue) setTncLocked(true);
+      if (pennyValue) setPennyCheckLocked(true);
+
+      // RESET FLAG AFTER A SHORT DELAY
+      setTimeout(() => {
+        isUpdatingFromBackend.current = false;
+      }, 100);
 
       alert("Profile updated successfully");
     } catch (err) {
+      isUpdatingFromBackend.current = false;
       setError(err.message || "Error updating profile");
     } finally {
       setSubmitting(false);
     }
   };
+
+
 
   if (loading) {
     return (
@@ -432,7 +585,7 @@ const Profile = () => {
       <div className="flex justify-center items-center w-full">
         <div className="w-full max-w-3xl bg-white shadow-md rounded-xl p-8">
           <h1 className="text-2xl font-bold text-[#E4002B] text-center pb-8">
-            Retailer Profile
+            Complete Your Profile
           </h1>
 
           {error && (
@@ -465,37 +618,19 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">
                   Contact No <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative">
                   <FaPhoneAlt className="absolute left-3 top-3 text-gray-400" />
-
                   <input
                     type="tel"
                     value={contactNo}
-                    onChange={(e) => {
-                      setContactNo(e.target.value.replace(/\D/g, ""));
-                      setIsVerified(false);
-                    }}
+                    onChange={(e) =>
+                      setContactNo(e.target.value.replace(/\D/g, ""))
+                    }
                     placeholder="+91 1234567890"
                     maxLength={10}
-                    className={`w-full pl-10 pr-20 py-2 border rounded-lg outline-none focus:ring-2 ${isVerified
-                      ? "border-green-500 focus:ring-green-500"
-                      : "border-gray-300 focus:ring-[#E4002B]"
-                      }`}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B]"
                     required
                   />
-
-                  <button
-                    type="button"
-                    disabled={contactNo.length !== 10}
-                    onClick={() => setShowOtpModal(true)}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold ${contactNo.length === 10
-                      ? "text-[#E4002B] hover:underline"
-                      : "text-gray-400"
-                      }`}
-                  >
-                    {isVerified ? "Verified ✓" : "Verify"}
-                  </button>
                 </div>
               </div>
 
@@ -631,7 +766,6 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">
                     GST No
                   </label>
-
                   <div className="relative">
                     <FaFileInvoice className="absolute left-3 top-3 text-gray-400" />
                     <input
@@ -656,7 +790,6 @@ const Profile = () => {
                         }`}
                     />
                   </div>
-
                   {gstError && (
                     <p className="text-red-500 text-xs mt-1">{gstError}</p>
                   )}
@@ -666,7 +799,6 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">
                     PAN Card <span className="text-red-500">*</span>
                   </label>
-
                   <div className="relative">
                     <FaIdCard className="absolute left-3 top-3 text-gray-400" />
                     <input
@@ -684,7 +816,6 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">
                   Address Line 1 <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative">
                   <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
                   <input
@@ -701,7 +832,6 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">
                   Address Line 2
                 </label>
-
                 <div className="relative">
                   <FaMapMarkerAlt className="absolute left-3 top-3 text-gray-400" />
                   <input
@@ -719,7 +849,6 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">
                     City <span className="text-red-500">*</span>
                   </label>
-
                   <div className="relative">
                     <FaCity className="absolute left-3 top-3 text-gray-400" />
                     <input
@@ -736,7 +865,6 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">
                     State <span className="text-red-500">*</span>
                   </label>
-
                   <div className="relative">
                     <FaMapMarkedAlt className="absolute left-3 top-3 text-gray-400" />
                     <input
@@ -753,7 +881,6 @@ const Profile = () => {
                   <label className="block text-sm font-medium mb-1">
                     Pincode <span className="text-red-500">*</span>
                   </label>
-
                   <div className="relative">
                     <FaMapPin className="absolute left-3 top-3 text-gray-400" />
                     <input
@@ -791,10 +918,8 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">
                   Account Number <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative">
                   <FaCreditCard className="absolute left-3 top-3 text-gray-400" />
-
                   <input
                     type="text"
                     value={accountNumber}
@@ -812,19 +937,15 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">
                   IFSC <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative">
                   <FaCode className="absolute left-3 top-3 text-gray-400" />
-
                   <input
                     type="text"
                     value={ifsc}
                     onChange={(e) => {
                       const val = e.target.value.toUpperCase();
                       setIfsc(val);
-
                       const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-
                       if (val === "") setIfscError("");
                       else if (!ifscRegex.test(val))
                         setIfscError(
@@ -841,7 +962,6 @@ const Profile = () => {
                     required
                   />
                 </div>
-
                 {ifscError && (
                   <p className="text-red-500 text-xs mt-1">{ifscError}</p>
                 )}
@@ -851,10 +971,8 @@ const Profile = () => {
                 <label className="block text-sm font-medium mb-1">
                   Branch Name <span className="text-red-500">*</span>
                 </label>
-
                 <div className="relative">
                   <FaStore className="absolute left-3 top-3 text-gray-400" />
-
                   <input
                     type="text"
                     value={branchName}
@@ -869,16 +987,18 @@ const Profile = () => {
               <div className="mt-2 flex items-start gap-2">
                 <input
                   type="checkbox"
-                  checked={pennyChecked}
-                  onChange={(e) => setPennyChecked(e.target.checked)}
+                  checked={pennyCheck}
+                  onChange={(e) => setPennyCheck(e.target.checked)}
+                  disabled={pennyCheckLocked}
                   className="mt-1 h-4 w-4 border-gray-300 rounded"
                   style={{ accentColor: "#E4002B" }}
-                  required
                 />
-
-                <label className="text-sm text-gray-700 leading-5 cursor-pointer">
+                <label className="text-sm text-gray-700 leading-5">
                   I confirm that I have received the ₹1 verification amount in my
                   bank account.
+                  {pennyCheckLocked && (
+                    <span className="text-green-600 ml-2">✓ Verified</span>
+                  )}
                 </label>
               </div>
             </section>
@@ -905,6 +1025,7 @@ const Profile = () => {
                   accept=".png,.jpg,.jpeg,.pdf,.doc"
                   file={govtIdPhoto}
                   setFile={setGovtIdPhoto}
+                  existingImageUrl={existingGovtIdPhoto}
                 />
 
                 <FileInput
@@ -916,6 +1037,7 @@ const Profile = () => {
                   accept=".png,.jpg,.jpeg,.pdf,.doc"
                   file={personPhoto}
                   setFile={setPersonPhoto}
+                  existingImageUrl={existingPersonPhoto}
                 />
 
                 <FileInput
@@ -923,6 +1045,7 @@ const Profile = () => {
                   accept=".png,.jpg,.jpeg,.pdf,.doc"
                   file={registrationFormFile}
                   setFile={setRegistrationFormFile}
+                  existingImageUrl={existingRegistrationForm}
                 />
 
                 <FileInput
@@ -934,6 +1057,7 @@ const Profile = () => {
                   accept=".png,.jpg,.jpeg,.pdf,.doc"
                   file={outletPhoto}
                   setFile={setOutletPhoto}
+                  existingImageUrl={existingOutletPhoto}
                 />
               </div>
             </section>
@@ -942,13 +1066,13 @@ const Profile = () => {
             <div className="flex items-center gap-2 mt-2">
               <input
                 type="checkbox"
-                checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
+                checked={tnc}
+                onChange={(e) => setTnc(e.target.checked)}
+                disabled={tncLocked}
                 required
                 className="h-4 w-4"
                 style={{ accentColor: "#E4002B" }}
               />
-
               <label className="text-sm text-gray-700">
                 I agree to the{" "}
                 <button
@@ -958,6 +1082,9 @@ const Profile = () => {
                 >
                   Terms & Conditions
                 </button>
+                {tncLocked && (
+                  <span className="text-green-600 ml-2">✓ Accepted</span>
+                )}
               </label>
             </div>
 
@@ -972,49 +1099,7 @@ const Profile = () => {
             </div>
           </form>
 
-          {/* OTP Modal */}
-          {showOtpModal && (
-            <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-xl shadow-xl w-80 text-center">
-                <h3 className="text-lg font-semibold mb-3">Enter OTP</h3>
-
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                  maxLength={6}
-                  placeholder="Enter 6-digit OTP"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#E4002B] mb-4"
-                />
-
-                <div className="flex justify-center gap-3">
-                  <button
-                    onClick={() => {
-                      setShowOtpModal(false);
-                      setOtp("");
-                    }}
-                    className="px-4 py-2 text-sm bg-gray-400 rounded-md hover:bg-gray-500 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      // TODO: call backend verify OTP if you implement it
-                      setIsVerified(true);
-                      setShowOtpModal(false);
-                      setOtp("");
-                    }}
-                    className="px-4 py-2 text-sm bg-[#E4002B] text-white rounded-md hover:bg-red-600 transition"
-                  >
-                    Verify
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Terms & Conditions Modal */}
-          {/* Modal for Terms and Conditions */}
           {showTerms && (
             <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
               <div className="bg-white text-gray-800 rounded-xl shadow-2xl w-[90%] md:w-[650px] relative p-6 border border-red-600 max-h-[80vh] overflow-y-auto">
@@ -1180,4 +1265,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default RetailerProfile;
