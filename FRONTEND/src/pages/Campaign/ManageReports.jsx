@@ -768,9 +768,6 @@ const ManageReports = () => {
                                                 Outlet
                                             </th>
                                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
-                                                Location
-                                            </th>
-                                            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
                                                 Employee
                                             </th>
                                             <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">
@@ -811,18 +808,6 @@ const ManageReports = () => {
                                                 <td className="px-4 py-3 text-sm text-gray-800 border-b">
                                                     {report.retailer?.outletName ||
                                                         "N/A"}
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-gray-800 border-b">
-                                                    <div>
-                                                        {report.retailer?.retailerId
-                                                            ?.shopDetails?.shopAddress
-                                                            ?.city || "N/A"}
-                                                    </div>
-                                                    <div className="text-xs text-gray-500">
-                                                        {report.retailer?.retailerId
-                                                            ?.shopDetails?.shopAddress
-                                                            ?.state || "N/A"}
-                                                    </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-gray-800 border-b">
                                                     {report.employee?.employeeName ? (
@@ -868,7 +853,7 @@ const ManageReports = () => {
                                                         onClick={() =>
                                                             handleViewDetails(report)
                                                         }
-                                                        className="text-[#E4002B] hover:underline font-medium"
+                                                        className="text-[#E4002B] hover:underline font-medium cursor-pointer"
                                                     >
                                                         View Details
                                                     </button>

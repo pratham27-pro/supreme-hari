@@ -198,7 +198,7 @@ const EmployeeDashboard = () => {
             </nav>
 
             {/* Layout */}
-            <div className="flex min-h-screen bg-gray-50 pt-20">
+            <div className="flex min-h-screen bg-gray-50 pt-20 overflow-hidden">
                 {/* SIDEBAR */}
                 <div className="w-64 bg-black shadow-md h-[calc(100vh-5rem)] fixed top-20 left-0 p-4">
                     <div className="text-center mb-2 mt-2">
@@ -297,7 +297,7 @@ const EmployeeDashboard = () => {
                 </div>
 
                 {/* MAIN CONTENT */}
-                <div className="ml-64 p-6 w-full bg-[#171717]">{renderContent()}</div>
+                <div className="ml-64 p-6 w-full bg-[#171717] ">{renderContent()}</div>
             </div>
         </>
     );
