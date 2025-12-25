@@ -278,7 +278,7 @@ const CreateRetailer = () => {
 
         try {
             const response = await fetch(
-                "https://srv1168036.hstgr.cloud/api/admin/retailers",
+                "https://deployed-site-o2d3.onrender.com/api/admin/retailers",
                 {
                     method: "POST",
                     headers: {

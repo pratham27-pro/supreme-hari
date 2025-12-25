@@ -44,7 +44,7 @@ const RetailerSignIn = () => {
         return;
       }
 
-      localStorage.setItem("retailer_token", data.token);
+      localStorage.setItem("retailer_token", data.token); 
       localStorage.setItem("retailer_user", JSON.stringify(data.retailer));
 
       toast.success("Login successful!", { theme: "dark" });

@@ -574,7 +574,7 @@ const PassbookHome = () => {
                                     </h3>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm mb-4">
-                                        <p><strong>Client:</strong> {campaign.campaignId?.client || "N/A"}</p>
+                                        <p><strong>Oragnization Name:</strong> {campaign.campaignId?.client || "N/A"}</p>
                                         <p><strong>Type:</strong> {campaign.campaignId?.type || "N/A"}</p>
                                     </div>
 

@@ -48,7 +48,14 @@ const App = () => {
           <Route path="/clientsignin" element={<ClientSignIn />} />
           <Route path="/employeesignin" element={<EmployeeSignIn />} />
           <Route path="/retailersignin" element={<RetailerSignIn />} />
-          <Route path="/retailer-dashboard" element={<RetailerDashboard />} />
+          <Route
+            path="/retailer-dashboard"
+            element={
+              <ProtectedRoute redirectTo="/retailersignin" tokenKey="retailer_token">
+                <RetailerDashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/employee-dashboard"
             element={
