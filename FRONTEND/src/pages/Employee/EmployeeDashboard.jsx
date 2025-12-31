@@ -297,7 +297,7 @@ const EmployeeDashboard = () => {
                 </div>
 
                 {/* MAIN CONTENT */}
-                <div className="ml-64 p-6 w-full bg-[#171717] ">{renderContent()}</div>
+                <div className="ml-64 p-6 w-full bg-gray-50 ">{renderContent()}</div>
             </div>
         </>
     );

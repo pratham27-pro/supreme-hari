@@ -1,7 +1,5 @@
-"use client";
 import { useState, useRef, useEffect } from "react";
 import {
-  FaEnvelope,
   FaUser,
   FaPhoneAlt,
   FaBuilding,
@@ -17,6 +15,18 @@ import {
 import { IoClose } from "react-icons/io5";
 
 const API_URL = "https://deployed-site-o2d3.onrender.com/api";
+
+const states = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand",
+  "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur",
+  "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+  "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+  "Uttar Pradesh", "Uttarakhand", "West Bengal", "Delhi",
+  "Jammu and Kashmir", "Ladakh", "Puducherry", "Chandigarh",
+  "Andaman and Nicobar Islands", "Dadra and Nagar Haveli and Daman and Diu",
+  "Lakshadweep"
+];
 
 /* ========================================
    SEARCHABLE SELECT COMPONENT
@@ -299,6 +309,68 @@ const Profile = () => {
 
   const [sameAsCorrespondence, setSameAsCorrespondence] = useState(false);
 
+  // Add state variables for pincode errors
+  const [coPincodeError, setCoPincodeError] = useState("");
+  const [pPincodeError, setPPincodeError] = useState("");
+
+  const [tnc, setTnc] = useState(false);
+  const [tncLocked, setTncLocked] = useState(false);
+
+  const [showTerms, setShowTerms] = useState(false);
+
+  // Add pincode-state mapping
+  const pincodeStateMap = [
+    { state: "Andhra Pradesh", start: 500001, end: 534999 },
+    { state: "Arunachal Pradesh", start: 790001, end: 792999 },
+    { state: "Assam", start: 781001, end: 788999 },
+    { state: "Bihar", start: 800001, end: 855999 },
+    { state: "Chhattisgarh", start: 490001, end: 497999 },
+    { state: "Delhi", start: 110001, end: 110096 },
+    { state: "Goa", start: 403001, end: 403999 },
+    { state: "Gujarat", start: 360001, end: 396999 },
+    { state: "Haryana", start: 121001, end: 127999 },
+    { state: "Himachal Pradesh", start: 171001, end: 177999 },
+    { state: "Jammu and Kashmir", start: 180001, end: 194999 },
+    { state: "Jharkhand", start: 814001, end: 834999 },
+    { state: "Karnataka", start: 560001, end: 591999 },
+    { state: "Kerala", start: 670001, end: 695999 },
+    { state: "Madhya Pradesh", start: 450001, end: 488999 },
+    { state: "Maharashtra", start: 400001, end: 445999 },
+    { state: "Manipur", start: 795001, end: 795999 },
+    { state: "Meghalaya", start: 793001, end: 794999 },
+    { state: "Mizoram", start: 796001, end: 796999 },
+    { state: "Nagaland", start: 797001, end: 798999 },
+    { state: "Odisha", start: 751001, end: 770999 },
+    { state: "Punjab", start: 140001, end: 160999 },
+    { state: "Rajasthan", start: 301001, end: 345999 },
+    { state: "Sikkim", start: 737001, end: 737999 },
+    { state: "Tamil Nadu", start: 600001, end: 643999 },
+    { state: "Telangana", start: 500001, end: 509999 },
+    { state: "Tripura", start: 799001, end: 799999 },
+    { state: "Uttar Pradesh", start: 201001, end: 285999 },
+    { state: "Uttarakhand", start: 246001, end: 263999 },
+    { state: "West Bengal", start: 700001, end: 743999 }
+  ];
+
+  // Add validation helper function
+  const validatePincode = (pincode, state, setError) => {
+    if (pincode.length === 6 && state) {
+      const stateInfo = pincodeStateMap.find(
+        (s) => s.state.toLowerCase() === state.toLowerCase()
+      );
+      if (stateInfo) {
+        const pinNum = parseInt(pincode, 10);
+        if (pinNum < stateInfo.start || pinNum > stateInfo.end) {
+          setError(`Pincode not valid for ${state}`);
+        } else {
+          setError("");
+        }
+      }
+    } else {
+      setError("");
+    }
+  };
+
   /* ========================================
      FETCH EMPLOYEE PROFILE ON MOUNT
   ======================================== */
@@ -446,6 +518,11 @@ const Profile = () => {
           }
         }
 
+        if (data.tnc) {
+          setTnc(true);
+          setTncLocked(true);
+        }
+
         console.log("Employee profile loaded successfully");
       } else {
         throw new Error(responseData.message || "Failed to fetch profile");
@@ -549,14 +626,26 @@ const Profile = () => {
       setPState(costate);
       setPCity(cocity);
       setPPincode(copincode);
-    } else {
-      setPAddress1("");
-      setPAddress2("");
-      setPState("");
-      setPCity("");
-      setPPincode("");
     }
+    // Don't clear when unchecking - let user manually edit
   };
+
+  // Add useEffect to auto-uncheck when addresses don't match
+  useEffect(() => {
+    if (sameAsCorrespondence) {
+      // Check if any permanent address field differs from correspondence
+      const addressesMatch =
+        paddress1 === coaddress1 &&
+        paddress2 === coaddress2 &&
+        pstate === costate &&
+        pcity === cocity &&
+        ppincode === copincode;
+
+      if (!addressesMatch) {
+        setSameAsCorrespondence(false);
+      }
+    }
+  }, [paddress1, paddress2, pstate, pcity, ppincode, coaddress1, coaddress2, costate, cocity, copincode, sameAsCorrespondence]);
 
   /* ========================================
      EXPERIENCE HANDLERS
@@ -616,7 +705,7 @@ const Profile = () => {
         return;
       }
 
-      // ✅ FIX: Check for both new files AND existing images
+      // FIX: Check for both new files AND existing images
       if (
         (!paadhaarFile1 && !imageUrls.aadhaarFront) ||
         (!paadhaarFile2 && !imageUrls.aadhaarBack) ||
@@ -662,6 +751,17 @@ const Profile = () => {
         alert("Please upload all required files");
         return;
       }
+    }
+
+    // ✅ MOVE THESE OUTSIDE - APPLY TO BOTH TYPES
+    if (coPincodeError || pPincodeError) {
+      alert("Please fix pincode errors before submitting.");
+      return;
+    }
+
+    if (!tnc) {
+      alert("Please accept Terms & Conditions");
+      return;
     }
 
     setSubmitting(true);
@@ -764,6 +864,8 @@ const Profile = () => {
         if (cpanFile?.raw) formData.append("panCard", cpanFile.raw);
         if (cbankProofFile?.raw) formData.append("bankProof", cbankProofFile.raw);
       }
+
+      formData.append("tnc", tnc);
 
       console.log("Submitting profile update...");
 
@@ -915,16 +1017,13 @@ const Profile = () => {
               </section>
 
               {/* Address Details */}
+              {/* Correspondence Address - PERMANENT EMPLOYEE */}
               <section className="space-y-4">
                 <h3 className="text-lg font-medium text-[#E4002B]">Correspondence Address</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <IconInput
                     icon={FaFileAlt}
-                    label={
-                      <>
-                        Address Line 1 <span className="text-red-500">*</span>
-                      </>
-                    }
+                    label={<>Address Line 1 <span className="text-red-500">*</span></>}
                     placeholder="House no, street, area"
                     value={coaddress1}
                     onChange={(e) => setCoAddress1(e.target.value)}
@@ -937,45 +1036,61 @@ const Profile = () => {
                     value={coaddress2}
                     onChange={(e) => setCoAddress2(e.target.value)}
                   />
-                  <IconInput
-                    icon={FaBuilding}
-                    label={
-                      <>
-                        State <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="Delhi"
+
+                  {/* ✅ FIX: Change this from IconInput to SearchableSelect */}
+                  <SearchableSelect
+                    label={<>State <span className="text-red-500">*</span></>}
+                    placeholder="Select state"
+                    options={states}
                     value={costate}
-                    onChange={(e) => setCoState(e.target.value)}
-                    required
+                    onChange={(value) => {
+                      setCoState(value);
+                      // Re-validate pincode when state changes
+                      if (copincode.length === 6 && value) {
+                        validatePincode(copincode, value, setCoPincodeError);
+                      }
+                    }}
                   />
+
                   <IconInput
                     icon={FaBuilding}
-                    label={
-                      <>
-                        City <span className="text-red-500">*</span>
-                      </>
-                    }
+                    label={<>City <span className="text-red-500">*</span></>}
                     placeholder="New Delhi"
                     value={cocity}
                     onChange={(e) => setCoCity(e.target.value)}
                     required
                   />
-                  <IconInput
-                    icon={FaSortNumericDownAlt}
-                    label={
-                      <>
-                        Pincode <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="110001"
-                    value={copincode}
-                    onChange={(e) => setCoPincode(e.target.value.replace(/\D/g, ""))}
-                    maxLength={6}
-                    required
-                  />
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
+                      Pincode <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FaSortNumericDownAlt className="absolute left-3 top-3 text-gray-400" />
+                      <input
+                        type="text"
+                        value={copincode}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setCoPincode(val);
+                          validatePincode(val, costate, setCoPincodeError);
+                        }}
+                        placeholder="110001"
+                        maxLength={6}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 text-sm ${coPincodeError
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-[#E4002B]"
+                          }`}
+                        required
+                      />
+                    </div>
+                    {coPincodeError && (
+                      <p className="text-red-500 text-xs mt-1">{coPincodeError}</p>
+                    )}
+                  </div>
                 </div>
 
+                {/* ✅ Checkbox */}
                 <div className="flex items-center space-x-2 mt-4">
                   <input
                     type="checkbox"
@@ -1010,17 +1125,17 @@ const Profile = () => {
                     value={paddress2}
                     onChange={(e) => setPAddress2(e.target.value)}
                   />
-                  <IconInput
-                    icon={FaBuilding}
-                    label={
-                      <>
-                        State <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="Delhi"
+                  <SearchableSelect
+                    label={<>State <span className="text-red-500">*</span></>}
+                    placeholder="Select state"
+                    options={states}
                     value={pstate}
-                    onChange={(e) => setPState(e.target.value)}
-                    required
+                    onChange={(value) => {
+                      setPState(value);
+                      if (ppincode.length === 6 && value) {
+                        validatePincode(ppincode, value, setPPincodeError);
+                      }
+                    }}
                   />
                   <IconInput
                     icon={FaBuilding}
@@ -1034,19 +1149,33 @@ const Profile = () => {
                     onChange={(e) => setPCity(e.target.value)}
                     required
                   />
-                  <IconInput
-                    icon={FaSortNumericDownAlt}
-                    label={
-                      <>
-                        Pincode <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="110001"
-                    value={ppincode}
-                    onChange={(e) => setPPincode(e.target.value.replace(/\D/g, ""))}
-                    maxLength={6}
-                    required
-                  />
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
+                      Pincode <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FaSortNumericDownAlt className="absolute left-3 top-3 text-gray-400" />
+                      <input
+                        type="text"
+                        value={ppincode}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setPPincode(val);
+                          validatePincode(val, pstate, setPPincodeError);
+                        }}
+                        placeholder="110001"
+                        maxLength={6}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 text-sm ${pPincodeError
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-[#E4002B]"
+                          }`}
+                        required
+                      />
+                    </div>
+                    {pPincodeError && (
+                      <p className="text-red-500 text-xs mt-1">{pPincodeError}</p>
+                    )}
+                  </div>
                 </div>
               </section>
 
@@ -1497,17 +1626,13 @@ const Profile = () => {
                 </div>
               </section>
 
-              {/* Address */}
+              {/* Contractual - Address Details */}
               <section className="space-y-4">
                 <h3 className="text-lg font-medium text-[#E4002B]">Address Details</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <IconInput
                     icon={FaFileAlt}
-                    label={
-                      <>
-                        Address Line 1 <span className="text-red-500">*</span>
-                      </>
-                    }
+                    label={<>Address Line 1 <span className="text-red-500">*</span></>}
                     placeholder="House no, street, area"
                     value={coaddress1}
                     onChange={(e) => setCoAddress1(e.target.value)}
@@ -1520,43 +1645,58 @@ const Profile = () => {
                     value={coaddress2}
                     onChange={(e) => setCoAddress2(e.target.value)}
                   />
-                  <IconInput
-                    icon={FaBuilding}
-                    label={
-                      <>
-                        State <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="Delhi"
+
+                  {/* ✅ FIX: Replace IconInput with SearchableSelect */}
+                  <SearchableSelect
+                    label={<>State <span className="text-red-500">*</span></>}
+                    placeholder="Select state"
+                    options={states}
                     value={costate}
-                    onChange={(e) => setCoState(e.target.value)}
-                    required
+                    onChange={(value) => {
+                      setCoState(value);
+                      // Re-validate pincode when state changes
+                      if (copincode.length === 6 && value) {
+                        validatePincode(copincode, value, setCoPincodeError);
+                      }
+                    }}
                   />
+
                   <IconInput
                     icon={FaBuilding}
-                    label={
-                      <>
-                        City <span className="text-red-500">*</span>
-                      </>
-                    }
+                    label={<>City <span className="text-red-500">*</span></>}
                     placeholder="New Delhi"
                     value={cocity}
                     onChange={(e) => setCoCity(e.target.value)}
                     required
                   />
-                  <IconInput
-                    icon={FaSortNumericDownAlt}
-                    label={
-                      <>
-                        Pincode <span className="text-red-500">*</span>
-                      </>
-                    }
-                    placeholder="110001"
-                    value={copincode}
-                    onChange={(e) => setCoPincode(e.target.value.replace(/\D/g, ""))}
-                    maxLength={6}
-                    required
-                  />
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1 text-gray-700">
+                      Pincode <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FaSortNumericDownAlt className="absolute left-3 top-3 text-gray-400" />
+                      <input
+                        type="text"
+                        value={copincode}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          setCoPincode(val);
+                          validatePincode(val, costate, setCoPincodeError);
+                        }}
+                        placeholder="110001"
+                        maxLength={6}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:ring-2 text-sm ${coPincodeError
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:ring-[#E4002B]"
+                          }`}
+                        required
+                      />
+                    </div>
+                    {coPincodeError && (
+                      <p className="text-red-500 text-xs mt-1">{coPincodeError}</p>
+                    )}
+                  </div>
                 </div>
               </section>
 
@@ -1697,6 +1837,42 @@ const Profile = () => {
             </>
           )}
 
+          {/* Terms & Conditions - ADD BEFORE SUBMIT BUTTON */}
+          <div className="flex items-center gap-2 mt-4">
+            <input
+              type="checkbox"
+              id="tncCheckbox"
+              checked={tnc}
+              onChange={(e) => {
+                if (!tncLocked) {
+                  const checked = e.target.checked;
+                  setTnc(checked);
+                  if (checked) {
+                    setTncLocked(true); // Lock once checked
+                  }
+                }
+              }}
+              disabled={tncLocked}
+              required
+              className="h-4 w-4 cursor-pointer"
+              style={{ accentColor: "#E4002B" }}
+            />
+            <label htmlFor="tncCheckbox" className="text-sm text-gray-700">
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={() => setShowTerms(true)}
+                className="text-[#E4002B] font-medium hover:underline"
+              >
+                Terms & Conditions
+              </button>
+              <span className="text-red-500"> *</span>
+              {tncLocked && (
+                <span className="text-green-600 ml-2">✓ Accepted</span>
+              )}
+            </label>
+          </div>
+
           <div>
             <button
               type="submit"
@@ -1707,9 +1883,198 @@ const Profile = () => {
             </button>
           </div>
         </form>
+
+        {/* Terms & Conditions Modal */}
+        {showTerms && (
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 transition-opacity duration-300">
+            <div className="bg-gray-900 text-gray-200 rounded-lg shadow-2xl w-[90%] md:w-[600px] relative p-6 border border-red-700 max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-gray-800 scrollbar-thumb-rounded-full">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowTerms(false)}
+                className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
+              >
+                <FaTimes />
+              </button>
+
+              <h3 className="text-lg font-semibold mb-4 text-red-500 text-center">
+                Terms & Conditions
+              </h3>
+
+              <div className="text-xs text-gray-300 space-y-2 leading-relaxed text-justify">
+                <p>
+                  <strong>Concept Promotions and events (CPE)</strong> respects your
+                  privacy and is committed to protecting your personal data. This notice
+                  and request for consent ("Notice") will inform you about how the CPE
+                  proposes to collect, handle, store, use, disclose and transfer
+                  ("Process") your personal data.
+                </p>
+
+                <p>
+                  <strong>1. Categories of Personal Data:</strong> We may Process the
+                  following types of your personal data:
+                </p>
+                <ol className="list-[lower-alpha] ml-4 space-y-1">
+                  <li>
+                    Identity and/or contact information and other details
+                    for you or your outlet such as name, physical address,
+                    mobile number, email address, signatures, date of birth,
+                    copy of identity and residence identifiers such as Aadhaar
+                    or other officially valid documents, Permanent Account Number,
+                    passport, biometric information, marital status, citizenship,
+                    residential status etc.
+                  </li>
+                  <li>
+                    Financial or related information such as income details,
+                    account statements, passbooks, employment or occupational information,
+                    information collected when you undertake transactions including when
+                    you send or receive payments, etc.
+                  </li>
+                  <li>
+                    Information that you provide about others such as nominee details,
+                    family details, associate details, employer details, authorized
+                    signatories and other authorized representatives in case of
+                    non-individual applicants, etc.
+                  </li>
+                  <li>
+                    Information that others provide about you such as data obtained from
+                    other parties who are involved in transactions undertaken by you, from
+                    any persons / organisations involved in any payment system or infrastructure
+                    or architecture of which we are a part and whether your interface/
+                    interaction is directly with us or indirectly through such third parties, etc.
+                  </li>
+                  <li>
+                    Information from and about your online activities such as your location,
+                    IP address, device and operating system, unique identifiers such as
+                    International Mobile Equipment Identity (IMEI) number, technical usage
+                    data, contact lists, fingerprint (if you choose to enable it), passwords
+                    or PINs in encrypted form, etc.
+                  </li>
+                  <li>
+                    Information such as records of our correspondence with you, your
+                    interaction with CPE including chats, emails, telephone conversations,
+                    grievances, etc.
+                  </li>
+                </ol>
+
+                <p>
+                  <strong>2. Purposes of Processing:</strong> We Process your personal
+                  data for:
+                </p>
+                <ol className="list-[lower-alpha] ml-4 space-y-1">
+                  <li>
+                    To meet our legal, regulatory or compliance obligations such as customer
+                    due diligence, know your customer/ anti-money laundering checks, undertaking
+                    data protection impact assessments, data audits, etc.
+                  </li>
+                  <li>
+                    To assess and monitor your continued eligibility and suitability for the
+                    Requested Product such as your KYC status, risk assessment, including by
+                    way of background checks, inspections, verifications, etc.
+                  </li>
+                  <li>
+                    To provide you with and enable your use of the Requested Product.
+                  </li>
+                  <li>
+                    To initiate legal or regulatory proceedings for enforcement of our
+                    rights or defending your claims.
+                  </li>
+                  <li>
+                    To provide you with customer service and to communicate with you through
+                    emails, chats, telephone calls and other means.
+                  </li>
+                  <li>
+                    To take actions necessary for prevention and detection of crime and
+                    fraud, portfolio sensitivity analysis, etc.
+                  </li>
+                </ol>
+                <p className="text-gray-400 text-[11px]">
+                  Note: We may undertake the abovementioned activities either ourselves or
+                  through our affiliates or third parties such as vendors, service providers,
+                  other regulated entities such as credit information companies and KYC
+                  registration and authentication service agencies, etc., in accordance with
+                  our internal policies and applicable law.
+                </p>
+
+                <p>
+                  <strong>3. Data Sharing:</strong> We may share your personal data with
+                  our affiliates or third parties such as credit information companies,
+                  bureaus, switches, networks, agencies, vendors, card association, settlement,
+                  transfer and processing intermediaries, payment aggregators, payment gateways,
+                  payments systems, service providers, consultants, vendors, agents, fintech
+                  entities, co-brand entities / partners, distributors, selling/ marketing agents,
+                  any partners, collaborators, co-lenders, co-originators, merchants, aggregators,
+                  lead generators, sourcing entities, clients, customers or other persons with
+                  whom we have any direct or indirect arrangement or tie-up or contract for any
+                  products or services, any TPAPs, or other players/ intermediaries in any
+                  ecosystem of which the CPE is a part, with entities managing loyalty programmes,
+                  managing, generating and/or implementing any offers, discounts, cashbacks,
+                  chargebacks, features, etc., and such entities may share your personal data
+                  with their service providers, consultants, vendors, etc., for the purposes
+                  mentioned in this Notice. In certain cases, these entities, which receive your
+                  personal data from us may also be legally required to give you a notice
+                  regarding their Processing of your personal data and request for your consent
+                  before they Process the same. We encourage you to read their privacy notices
+                  and contact them if you have any questions regarding how they Process your
+                  personal data.
+                </p>
+
+                <p>
+                  <strong>4. Withdrawal of Consent:</strong> You have the right to withdraw
+                  your consent at any time by following the process provided under the
+                  'Consent Withdrawal' section of the Privacy Policy. <br></br>
+                  Please note that our Processing of your personal data before you withdraw
+                  your consent will not be impacted. You should also be aware that if you withdraw
+                  your consent for us to Process your personal data for some of the purposes we
+                  have mentioned in this Notice, we may not be able to continue offering you the
+                  Requested Product. This could mean that the terms and conditions applicable to
+                  discontinuation or closure of your Requested Product will become applicable.<br></br>
+                  We encourage you to review the terms and conditions applicable to the Requested
+                  Product to understand the consequences of withdrawal of your consent in respect
+                  of use of your personal data.
+                </p>
+
+                <p>
+                  <strong>5. Grievances:</strong> If you believe that you have any concerns
+                  regarding how we Process your personal data, you have the right to let us
+                  know your grievances. Please contact us at the details provided under
+                  'Contact Information' below to register your concerns.
+                </p>
+                <p className="text-gray-400 text-[11px]">
+                  <strong>Contact Information:</strong> <span className="text-red-500 hover:underline">manager@conceptpromotions.in</span>
+                </p>
+
+                <p>
+                  <strong>6. Consent Declaration:</strong> By providing your consent by ticking
+                  the checkbox, you acknowledge and agree to the following:
+                </p>
+                <ol className="list-[lower-alpha] ml-4 space-y-1">
+                  <li>
+                    That you have read and understood the contents of this Notice and consent to
+                    the Processing of your personal data as described here.
+                  </li>
+                  <li>
+                    That you give your consent voluntarily, without any coercion or influence
+                    from the CPE or any other person.
+                  </li>
+                  <li>
+                    That you will provide and ensure that the CPE maintains accurate, updated,
+                    complete and consistent personal data.
+                  </li>
+                  <li>
+                    The CPE may Process your personal data for certain other purposes without
+                    your consent, where the law allows us to do so such as enforcement of a
+                    legal claim against you or for the CPE to make regulatory disclosures.
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default Profile;
+
+

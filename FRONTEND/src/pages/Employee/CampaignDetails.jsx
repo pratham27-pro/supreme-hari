@@ -1,123 +1,140 @@
 import React, { useState, useEffect } from "react";
-import { FaSpinner } from "react-icons/fa";
+import axios from "axios";
 
 import Info from "./Info";
 import Gratification from "./Gratification";
-import Report from "./Report";
+import Report from "./EmployeeViewReports";
 import Period from "./Period";
 import Status from "./Status";
 import OutletsAssigned from "./OutletsAssigned";
 import SubmitReport from "./SubmitReport";
 
-const CampaignDetails = ({ campaignId, onBack }) => {
-  const [campaign, setCampaign] = useState(null);
+const CampaignDetails = ({ campaign, onBack }) => {
+  const [campaignData, setCampaignData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("info");
 
-  // Fetch campaign details from API
+  const API_BASE_URL = "https://deployed-site-o2d3.onrender.com/api";
+
+  // Fetch full campaign details on mount
   useEffect(() => {
     const fetchCampaignDetails = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("token");
+        setError(null);
 
+        const token = localStorage.getItem("token");
         if (!token) {
-          setError("Authentication token not found");
+          setError("No authentication token found. Please login.");
+          setLoading(false);
           return;
         }
 
-        const response = await fetch(
-          "https://srv1168036.hstgr.cloud/api/employee/employee/campaigns",
+        const response = await axios.get(
+          `${API_BASE_URL}/employee/campaigns/${campaign._id}/status`,
           {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch campaign details");
-        }
+        setCampaignData(response.data);
 
-        const data = await response.json();
-        const selectedCampaign = data.campaigns.find(
-          (c) => c._id === campaignId
-        );
-
-        if (!selectedCampaign) {
-          throw new Error("Campaign not found");
-        }
-
-        setCampaign(selectedCampaign);
-        setError("");
       } catch (err) {
-        console.error("Error fetching campaign details:", err);
-        setError(err.message || "Failed to load campaign details");
+        console.error("Fetch campaign details error:", err);
+        setError(err.response?.data?.message || "Failed to fetch campaign details");
       } finally {
         setLoading(false);
       }
     };
 
-    if (campaignId) {
+    if (campaign?._id) {
       fetchCampaignDetails();
     }
-  }, [campaignId]);
+  }, [campaign]);
 
-  // Loading state
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    try {
+      return new Date(dateString).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    } catch {
+      return "Invalid date";
+    }
+  };
+
+  // Prepare campaign object for child components
+  const campaignForComponents = campaignData ? {
+    name: campaignData.name,
+    startDate: formatDate(campaignData.employeeStatus?.startDate || campaignData.campaignStartDate),
+    endDate: formatDate(campaignData.employeeStatus?.endDate || campaignData.campaignEndDate),
+    client: campaignData.client,
+    type: campaignData.type,
+    status: campaignData.employeeStatus?.status || 'pending',
+    isActive: campaignData.isActive,
+    regions: campaignData.regions,
+    states: campaignData.states,
+    createdBy: campaignData.createdBy,
+    assignedAt: campaignData.employeeStatus?.assignedAt,
+    updatedAt: campaignData.employeeStatus?.updatedAt,
+    // Add any other fields your child components need
+  } : null;
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[500px]">
-        <FaSpinner className="animate-spin text-5xl text-[#E4002B]" />
+      <div className="flex justify-center items-center py-12">
+        <div className="text-lg text-gray-600">Loading campaign details...</div>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
-      <div className="p-6 bg-white rounded-lg shadow-md text-center">
-        <p className="text-red-600 font-semibold mb-4 text-lg">{error}</p>
+      <div className="p-6 bg-white rounded-lg shadow-md">
         <button
           onClick={onBack}
-          className="bg-[#E4002B] text-white px-6 py-2 rounded-md hover:bg-[#C00026] transition"
+          className="mb-4 text-[#E4002B] font-medium hover:underline"
         >
-          Go Back
+          ← Back
         </button>
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+          {error}
+        </div>
       </div>
     );
   }
 
-  // No campaign found
-  if (!campaign) {
+  if (!campaignData) {
     return (
-      <div className="p-6 bg-white rounded-lg shadow-md text-center">
-        <p className="text-gray-600 mb-4">Campaign not found</p>
+      <div className="p-6 bg-white rounded-lg shadow-md">
         <button
           onClick={onBack}
-          className="bg-[#E4002B] text-white px-6 py-2 rounded-md hover:bg-[#C00026] transition"
+          className="mb-4 text-[#E4002B] font-medium hover:underline"
         >
-          Go Back
+          ← Back
         </button>
+        <p>No campaign found.</p>
       </div>
     );
   }
 
   const tabComponents = {
-    info: <Info campaign={campaign} />,
-    gratification: <Gratification campaign={campaign} />,
-    report: <Report campaign={campaign} />,
-    period: <Period campaign={campaign} />,
-    status: <Status campaign={campaign} />,
-    outlets: <OutletsAssigned campaign={campaign} />,
-    submitReport: <SubmitReport campaign={campaign} campaignId={campaignId} />,
+    info: <Info campaign={campaignForComponents} />,
+    gratification: <Gratification campaign={campaignForComponents} />,
+    report: <Report campaign={campaignForComponents} />,
+    period: <Period campaign={campaignForComponents} />,
+    status: <Status campaign={campaignForComponents} />,
+    OutletsAssigned: <OutletsAssigned campaign={campaignForComponents} />,
+    submitReport: <SubmitReport campaign={campaignForComponents} />,
   };
 
   return (
-    <div className="p-6 bg-[#EDEDED] rounded-lg shadow-md">
-      {/* Back Button */}
+    <div className="p-6 bg-white rounded-lg shadow-md">
+      {/* Back */}
       <button
         onClick={onBack}
         className="mb-4 text-[#E4002B] font-medium hover:underline"
@@ -125,12 +142,12 @@ const CampaignDetails = ({ campaignId, onBack }) => {
         ← Back
       </button>
 
-      {/* Campaign Name Heading */}
+      {/* Heading */}
       <h2 className="text-2xl font-bold text-[#E4002B] mb-6">
-        {campaign.name}
+        {campaignData.name}
       </h2>
 
-      {/* Submit Report Button */}
+      {/* Submit Report Button under heading */}
       <button
         onClick={() => setActiveTab("submitReport")}
         className="px-4 py-2 rounded-lg bg-[#E4002B] text-white font-medium shadow-md hover:bg-[#c60025] mb-4"
@@ -138,7 +155,7 @@ const CampaignDetails = ({ campaignId, onBack }) => {
         Submit Report
       </button>
 
-      {/* Black Separation Line */}
+      {/* Black separation line */}
       <div className="w-full h-[1px] bg-black mb-6"></div>
 
       {/* 3×2 Grid Buttons */}
@@ -148,17 +165,13 @@ const CampaignDetails = ({ campaignId, onBack }) => {
           { key: "gratification", label: "Gratification" },
           { key: "report", label: "View Report" },
           { key: "period", label: "Period" },
-          { key: "outlets", label: "Outlets Assigned" },
           { key: "status", label: "Status" },
+          { key: "OutletsAssigned", label: "Outlets Assigned" },
         ].map((item) => (
           <button
             key={item.key}
-            className={`p-4 border rounded-lg text-center shadow-sm font-medium transition
-              ${
-                activeTab === item.key
-                  ? "bg-[#E4002B] text-white"
-                  : "hover:shadow-md hover:bg-gray-50"
-              }`}
+            className={`p-4 border rounded-lg text-center shadow-sm font-medium
+              ${activeTab === item.key ? "bg-[#E4002B] text-white" : "hover:shadow-md"}`}
             onClick={() => setActiveTab(item.key)}
           >
             {item.label}
