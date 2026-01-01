@@ -24,7 +24,7 @@ const RetailerSignIn = () => {
 
     try {
       const response = await fetch(
-        "https://srv1168036.hstgr.cloud/api/retailer/login",
+        "https://deployed-site-o2d3.onrender.com/api/retailer/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

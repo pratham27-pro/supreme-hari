@@ -1101,23 +1101,21 @@ const RetailerProfile = () => {
 
           {/* Terms & Conditions Modal */}
           {showTerms && (
-            <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50">
-              <div className="bg-white text-gray-800 rounded-xl shadow-2xl w-[90%] md:w-[650px] relative p-6 border border-red-600 max-h-[80vh] overflow-y-auto">
-
+            <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex justify-center items-center z-50 transition-opacity duration-300">
+              <div className="bg-gray-900 text-gray-200 rounded-lg shadow-2xl w-[90%] md:w-[600px] relative p-6 border border-red-700 max-h-[80vh] overflow-y-auto scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-gray-800 scrollbar-thumb-rounded-full">
                 {/* Close Button */}
                 <button
                   onClick={() => setShowTerms(false)}
-                  className="absolute top-3 right-3 text-gray-500 hover:text-red-600 transition"
+                  className="absolute top-3 right-3 text-gray-400 hover:text-red-500"
                 >
-                  <FaTimes size={18} />
+                  <FaTimes />
                 </button>
 
-                <h3 className="text-xl font-semibold mb-4 text-[#E4002B] text-center">
+                <h3 className="text-lg font-semibold mb-4 text-red-500 text-center">
                   Terms & Conditions
                 </h3>
 
-                <div className="text-sm text-gray-700 space-y-3 leading-relaxed">
-
+                <div className="text-xs text-gray-300 space-y-2 leading-relaxed text-justify">
                   <p>
                     <strong>Concept Promotions and events (CPE)</strong> respects your
                     privacy and is committed to protecting your personal data. This notice
@@ -1130,7 +1128,6 @@ const RetailerProfile = () => {
                     <strong>1. Categories of Personal Data:</strong> We may Process the
                     following types of your personal data:
                   </p>
-
                   <ol className="list-[lower-alpha] ml-4 space-y-1">
                     <li>
                       Identity and/or contact information and other details
@@ -1178,7 +1175,6 @@ const RetailerProfile = () => {
                     <strong>2. Purposes of Processing:</strong> We Process your personal
                     data for:
                   </p>
-
                   <ol className="list-[lower-alpha] ml-4 space-y-1">
                     <li>
                       To meet our legal, regulatory or compliance obligations such as customer
@@ -1206,8 +1202,7 @@ const RetailerProfile = () => {
                       fraud, portfolio sensitivity analysis, etc.
                     </li>
                   </ol>
-
-                  <p className="text-gray-500 text-xs">
+                  <p className="text-gray-400 text-[11px]">
                     Note: We may undertake the abovementioned activities either ourselves or
                     through our affiliates or third parties such as vendors, service providers,
                     other regulated entities such as credit information companies and KYC
@@ -1225,36 +1220,67 @@ const RetailerProfile = () => {
                     any partners, collaborators, co-lenders, co-originators, merchants, aggregators,
                     lead generators, sourcing entities, clients, customers or other persons with
                     whom we have any direct or indirect arrangement or tie-up or contract for any
-                    products or services…
+                    products or services, any TPAPs, or other players/ intermediaries in any
+                    ecosystem of which the CPE is a part, with entities managing loyalty programmes,
+                    managing, generating and/or implementing any offers, discounts, cashbacks,
+                    chargebacks, features, etc., and such entities may share your personal data
+                    with their service providers, consultants, vendors, etc., for the purposes
+                    mentioned in this Notice. In certain cases, these entities, which receive your
+                    personal data from us may also be legally required to give you a notice
+                    regarding their Processing of your personal data and request for your consent
+                    before they Process the same. We encourage you to read their privacy notices
+                    and contact them if you have any questions regarding how they Process your
+                    personal data.
                   </p>
 
                   <p>
                     <strong>4. Withdrawal of Consent:</strong> You have the right to withdraw
-                    your consent anytime by following the process provided under the
-                    'Consent Withdrawal' section of the Privacy Policy.
+                    your consent at any time by following the process provided under the
+                    'Consent Withdrawal' section of the Privacy Policy. <br></br>
+                    Please note that our Processing of your personal data before you withdraw
+                    your consent will not be impacted. You should also be aware that if you withdraw
+                    your consent for us to Process your personal data for some of the purposes we
+                    have mentioned in this Notice, we may not be able to continue offering you the
+                    Requested Product. This could mean that the terms and conditions applicable to
+                    discontinuation or closure of your Requested Product will become applicable.<br></br>
+                    We encourage you to review the terms and conditions applicable to the Requested
+                    Product to understand the consequences of withdrawal of your consent in respect
+                    of use of your personal data.
                   </p>
 
                   <p>
-                    <strong>5. Grievances:</strong> If you believe that you have concerns
-                    regarding how we Process your personal data, contact:
+                    <strong>5. Grievances:</strong> If you believe that you have any concerns
+                    regarding how we Process your personal data, you have the right to let us
+                    know your grievances. Please contact us at the details provided under
+                    'Contact Information' below to register your concerns.
                   </p>
-
-                  <p className="text-[#E4002B] text-sm font-medium">
-                    manager@conceptpromotions.in
+                  <p className="text-gray-400 text-[11px]">
+                    <strong>Contact Information:</strong> <span className="text-red-500 hover:underline">manager@conceptpromotions.in</span>
                   </p>
 
                   <p>
-                    <strong>6. Consent Declaration:</strong> By providing your consent, you
-                    agree to:
+                    <strong>6. Consent Declaration:</strong> By providing your consent by ticking
+                    the checkbox, you acknowledge and agree to the following:
                   </p>
-
                   <ol className="list-[lower-alpha] ml-4 space-y-1">
-                    <li>You have read and understood this Notice.</li>
-                    <li>You give your consent voluntarily.</li>
-                    <li>You will provide accurate, updated personal data.</li>
-                    <li>CPE may Process your data as permitted by law.</li>
+                    <li>
+                      That you have read and understood the contents of this Notice and consent to
+                      the Processing of your personal data as described here.
+                    </li>
+                    <li>
+                      That you give your consent voluntarily, without any coercion or influence
+                      from the CPE or any other person.
+                    </li>
+                    <li>
+                      That you will provide and ensure that the CPE maintains accurate, updated,
+                      complete and consistent personal data.
+                    </li>
+                    <li>
+                      The CPE may Process your personal data for certain other purposes without
+                      your consent, where the law allows us to do so such as enforcement of a
+                      legal claim against you or for the CPE to make regulatory disclosures.
+                    </li>
                   </ol>
-
                 </div>
               </div>
             </div>

@@ -3,7 +3,7 @@ import axios from "axios";
 
 import Info from "./Info";
 import Gratification from "./Gratification";
-import Report from "./Report";
+import Report from "./RetailerViewReports";
 import Period from "./Period";
 import Status from "./Status";
 import Leaderboard from "./Leaderboard";

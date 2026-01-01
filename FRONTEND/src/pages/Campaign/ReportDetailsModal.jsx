@@ -1054,6 +1054,55 @@ const ReportDetailsModal = ({ report, onClose, onUpdate, onDelete }) => {
                                     </div>
                                 )}
 
+                                {/* Employee Visit Details in View Mode */}
+                                {report.submittedBy?.role === "Employee" && (
+                                    <div className="bg-gray-50 p-4 rounded-lg">
+                                        <h3 className="text-lg font-semibold mb-4 text-gray-700">
+                                            Visit Details
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-600 mb-1">
+                                                    Type of Visit
+                                                </label>
+                                                <p className="text-gray-800 bg-white px-3 py-2 rounded capitalize">
+                                                    {report.typeOfVisit || "N/A"}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-600 mb-1">
+                                                    Attendance Status
+                                                </label>
+                                                <p className={`px-3 py-2 rounded bg-white text-gray-800`}>
+                                                    {report.attendedVisit === "yes" ? "Attended" : "Not Attended"}
+                                                </p>
+                                            </div>
+                                            {report.attendedVisit === "no" && report.reasonForNonAttendance && (
+                                                <>
+                                                    <div>
+                                                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                                                            Reason
+                                                        </label>
+                                                        <p className="text-gray-800 bg-white px-3 py-2 rounded capitalize">
+                                                            {report.reasonForNonAttendance.reason || "N/A"}
+                                                        </p>
+                                                    </div>
+                                                    {report.reasonForNonAttendance.reason === "others" && report.reasonForNonAttendance.otherReason && (
+                                                        <div className="md:col-span-2">
+                                                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                                                                Additional Details
+                                                            </label>
+                                                            <p className="text-gray-800 bg-white px-3 py-2 rounded">
+                                                                {report.reasonForNonAttendance.otherReason}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Product/Stock Info */}
                                 {report.reportType === "Stock" &&
                                     (report.brand ||

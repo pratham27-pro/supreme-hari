@@ -161,7 +161,7 @@ const ManageReports = () => {
 
             // Fetch all retailers
             const retailersRes = await fetch(
-                "https://srv1168036.hstgr.cloud/api/admin/retailers",
+                "https:///api/admin/retailers",
                 {
                     headers: { Authorization: `Bearer ${token}` },
                 }
@@ -453,6 +453,8 @@ const ManageReports = () => {
             );
 
             const data = await res.json();
+            
+            console.log("Fetched report details:", data);
 
             if (res.ok) {
                 setSelectedReport(data.report);
@@ -470,7 +472,7 @@ const ManageReports = () => {
         try {
             const token = localStorage.getItem("token");
 
-            console.log("🚀 Updating report:", reportId);
+            console.log("Updating report:", reportId);
 
             const res = await fetch(
                 `https://deployed-site-o2d3.onrender.com/api/reports/update/${reportId}`,
